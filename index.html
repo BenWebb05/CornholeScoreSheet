@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cornhole Scoreboard</title>
   <style>
     body {
@@ -36,6 +36,7 @@
     button {
       margin: 3px;
       padding: 2px 6px;
+      cursor: pointer;
     }
     .totals {
       font-weight: bold;
@@ -46,6 +47,32 @@
     .field-group {
       margin-bottom: 5px;
     }
+    /* Flex row for aligned buttons and inputs */
+    .flex-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: nowrap;
+    }
+    .flex-row label {
+      min-width: 30px;
+      font-weight: bold;
+    }
+    .flex-row input[type="number"] {
+      width: 50px;
+      text-align: center;
+    }
+    .flex-row button {
+      min-width: 28px;
+      height: 28px;
+      font-size: 20px;
+      line-height: 20px;
+      padding: 0;
+      border-radius: 4px;
+      border: 1px solid #888;
+      background: #eee;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -54,18 +81,32 @@
 
   <div id="modeSelection" class="center">
     <p><strong>Choose Game Mode:</strong></p>
-    <button onclick="startSolos()">Solos</button>
-    <button onclick="alert('Team mode coming soon!')">Teams</button>
+    <button onclick="selectMode('solos')">Solos</button>
+    <button onclick="selectMode('teams')">Teams</button>
   </div>
 
-  <div id="playerNameForm" class="center hidden">
+  <!-- Solo Player Names -->
+  <div id="soloNameForm" class="center hidden">
     <p><strong>Enter Player Names:</strong></p>
     <input type="text" id="player1Name" placeholder="Player 1" value="Ben" />
     <input type="text" id="player2Name" placeholder="Player 2" value="Dad" />
-    <br><br>
-    <button onclick="startGame()">Start Game</button>
+    <br /><br />
+    <button onclick="startSoloGame()">Start Game</button>
   </div>
 
+  <!-- Team Names -->
+  <div id="teamNameForm" class="center hidden">
+    <p><strong>Enter Team 1 Player Names:</strong></p>
+    <input type="text" id="team1Player1" placeholder="Team 1 Player 1" value="Ben" />
+    <input type="text" id="team1Player2" placeholder="Team 1 Player 2" value="Lilly" />
+    <p><strong>Enter Team 2 Player Names:</strong></p>
+    <input type="text" id="team2Player1" placeholder="Team 2 Player 1" value="Matt" />
+    <input type="text" id="team2Player2" placeholder="Team 2 Player 2" value="Maddy" />
+    <br /><br />
+    <button onclick="startTeamGame()">Start Game</button>
+  </div>
+
+  <!-- Scoreboard for both modes -->
   <div id="scoreboard" class="hidden">
     <div class="center">
       <button onclick="addRound()">➕ Add Round</button>
@@ -77,68 +118,108 @@
       <thead>
         <tr>
           <th>Round</th>
-          <th id="p1Header">Ben</th>
-          <th id="p2Header">Dad</th>
+          <th id="col1Header">Player 1</th>
+          <th id="col2Header">Player 2</th>
         </tr>
       </thead>
       <tbody id="scoreTable">
-        <!-- rounds go here -->
+        <!-- rounds here -->
       </tbody>
       <tfoot>
         <tr class="totals">
           <td>Total Points</td>
-          <td id="totalP1">0</td>
-          <td id="totalP2">0</td>
-        </tr>
-        <tr class="totals">
-          <td>Total Cornholes</td>
-          <td id="cornP1">0</td>
-          <td id="cornP2">0</td>
-        </tr>
-        <tr class="totals">
-          <td>4-Baggers</td>
-          <td id="baggerP1">0</td>
-          <td id="baggerP2">0</td>
+          <td id="totalCol1">0</td>
+          <td id="totalCol2">0</td>
         </tr>
       </tfoot>
     </table>
   </div>
 
-  <script>
-    function startSolos() {
-      document.getElementById("modeSelection").classList.add("hidden");
-      document.getElementById("playerNameForm").classList.remove("hidden");
+<script>
+  let mode = ""; // "solos" or "teams"
+  let roundCount = 0;
+
+  function selectMode(selectedMode) {
+    mode = selectedMode;
+    document.getElementById("modeSelection").classList.add("hidden");
+    if (mode === "solos") {
+      document.getElementById("soloNameForm").classList.remove("hidden");
+    } else if (mode === "teams") {
+      document.getElementById("teamNameForm").classList.remove("hidden");
     }
+  }
 
-    function startGame() {
-      const p1 = document.getElementById("player1Name").value || "Player 1";
-      const p2 = document.getElementById("player2Name").value || "Player 2";
+  function startSoloGame() {
+    const p1 = document.getElementById("player1Name").value || "Player 1";
+    const p2 = document.getElementById("player2Name").value || "Player 2";
+    setupScoreboard(p1, p2);
+    document.getElementById("soloNameForm").classList.add("hidden");
+    document.getElementById("scoreboard").classList.remove("hidden");
+    resetGame();
+    addRound();
+  }
 
-      document.getElementById("p1Header").textContent = p1;
-      document.getElementById("p2Header").textContent = p2;
+  function startTeamGame() {
+    const t1p1 = document.getElementById("team1Player1").value.trim() || "Team1Player1";
+    const t1p2 = document.getElementById("team1Player2").value.trim() || "Team1Player2";
+    const t2p1 = document.getElementById("team2Player1").value.trim() || "Team2Player1";
+    const t2p2 = document.getElementById("team2Player2").value.trim() || "Team2Player2";
 
-      document.getElementById("playerNameForm").classList.add("hidden");
-      document.getElementById("scoreboard").classList.remove("hidden");
+    const team1Name = `${t1p1} & ${t1p2}`;
+    const team2Name = `${t2p1} & ${t2p2}`;
 
-      addRound();
-    }
+    setupScoreboard(team1Name, team2Name);
+    document.getElementById("teamNameForm").classList.add("hidden");
+    document.getElementById("scoreboard").classList.remove("hidden");
+    resetGame();
+    addRound();
+  }
 
-    function addRound() {
-      const table = document.getElementById("scoreTable");
-      const roundNumber = table.rows.length + 1;
-      const row = document.createElement("tr");
+  // Setup scoreboard headers based on names
+  function setupScoreboard(name1, name2) {
+    document.getElementById("col1Header").textContent = name1;
+    document.getElementById("col2Header").textContent = name2;
+  }
 
+  function addRound() {
+    const table = document.getElementById("scoreTable");
+    roundCount++;
+    const row = document.createElement("tr");
+
+    // For teams mode, only track points
+    if (mode === "teams") {
       row.innerHTML = `
-        <td>Round ${roundNumber}</td>
+        <td>Round ${roundCount}</td>
         <td>
-          <div class="field-group">
-            Pts: 
+          <div class="flex-row">
+            <label>Pts:</label>
             <button onclick="changeValue(this, -1)">–</button>
             <input type="number" value="0" min="0" onchange="updateTotals()" />
             <button onclick="changeValue(this, 1)">+</button>
           </div>
-          <div class="field-group">
-            CH: 
+        </td>
+        <td>
+          <div class="flex-row">
+            <label>Pts:</label>
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+        </td>
+      `;
+    } else {
+      // solos mode: points, cornholes, 4-bagger checkbox
+      row.innerHTML = `
+        <td>Round ${roundCount}</td>
+        <td>
+          <div class="flex-row">
+            <label>Pts:</label>
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div class="flex-row">
+            <label>CH:</label>
             <button onclick="changeValue(this, -1)">–</button>
             <input type="number" value="0" min="0" onchange="updateTotals()" />
             <button onclick="changeValue(this, 1)">+</button>
@@ -148,14 +229,14 @@
           </div>
         </td>
         <td>
-          <div class="field-group">
-            Pts: 
+          <div class="flex-row">
+            <label>Pts:</label>
             <button onclick="changeValue(this, -1)">–</button>
             <input type="number" value="0" min="0" onchange="updateTotals()" />
             <button onclick="changeValue(this, 1)">+</button>
           </div>
-          <div class="field-group">
-            CH: 
+          <div class="flex-row">
+            <label>CH:</label>
             <button onclick="changeValue(this, -1)">–</button>
             <input type="number" value="0" min="0" onchange="updateTotals()" />
             <button onclick="changeValue(this, 1)">+</button>
@@ -165,64 +246,114 @@
           </div>
         </td>
       `;
-      table.appendChild(row);
-      updateTotals();
     }
 
-    function changeValue(button, delta) {
-      const input = button.parentElement.querySelector("input[type='number']");
-      let val = parseInt(input.value) || 0;
-      val = Math.max(0, val + delta);
-      input.value = val;
-      updateTotals();
-    }
+    table.appendChild(row);
+    updateTotals();
+  }
 
-    function updateTotals() {
-      let p1Points = 0, p2Points = 0;
-      let p1CH = 0, p2CH = 0;
-      let p1Baggers = 0, p2Baggers = 0;
+  function changeValue(button, delta) {
+    const input = button.parentElement.querySelector("input[type='number']");
+    let val = parseInt(input.value) || 0;
+    val = Math.max(0, val + delta);
+    input.value = val;
+    updateTotals();
+  }
 
-      const rows = document.querySelectorAll("#scoreTable tr");
+  function updateTotals() {
+    let col1Points = 0, col2Points = 0;
+    let col1CH = 0, col2CH = 0;
+    let col1Baggers = 0, col2Baggers = 0;
 
-      rows.forEach(row => {
-        const inputs = row.querySelectorAll("input");
+    const rows = document.querySelectorAll("#scoreTable tr");
 
-        p1Points += parseInt(inputs[0].value) || 0;
+    rows.forEach(row => {
+      const inputs = row.querySelectorAll("input");
+
+      if (mode === "teams") {
+        col1Points += parseInt(inputs[0].value) || 0;
+        col2Points += parseInt(inputs[1].value) || 0;
+      } else {
+        col1Points += parseInt(inputs[0].value) || 0;
         const ch1 = parseInt(inputs[1].value) || 0;
-        p1CH += ch1;
-        if (inputs[2].checked || ch1 === 4) p1Baggers++;
+        col1CH += ch1;
+        if (inputs[2].checked || ch1 === 4) col1Baggers++;
 
-        p2Points += parseInt(inputs[3].value) || 0;
+        col2Points += parseInt(inputs[3].value) || 0;
         const ch2 = parseInt(inputs[4].value) || 0;
-        p2CH += ch2;
-        if (inputs[5].checked || ch2 === 4) p2Baggers++;
-      });
+        col2CH += ch2;
+        if (inputs[5].checked || ch2 === 4) col2Baggers++;
+      }
+    });
 
-      document.getElementById("totalP1").textContent = p1Points;
-      document.getElementById("totalP2").textContent = p2Points;
-      document.getElementById("cornP1").textContent = p1CH;
-      document.getElementById("cornP2").textContent = p2CH;
-      document.getElementById("baggerP1").textContent = p1Baggers;
-      document.getElementById("baggerP2").textContent = p2Baggers;
-    }
+    document.getElementById("totalCol1").textContent = col1Points;
+    document.getElementById("totalCol2").textContent = col2Points;
 
-    function resetGame() {
-      document.getElementById("scoreTable").innerHTML = "";
-      document.getElementById("totalP1").textContent = "0";
-      document.getElementById("totalP2").textContent = "0";
-      document.getElementById("cornP1").textContent = "0";
-      document.getElementById("cornP2").textContent = "0";
-      document.getElementById("baggerP1").textContent = "0";
-      document.getElementById("baggerP2").textContent = "0";
-    }
+    if (mode === "solos") {
+      // Add totals rows for CH and 4-baggers if solos mode
+      if (!document.getElementById("cornholeTotalsRow")) {
+        const tfoot = document.querySelector("table tfoot");
+        const cornRow = document.createElement("tr");
+        cornRow.className = "totals";
+        cornRow.id = "cornholeTotalsRow";
+        cornRow.innerHTML = `
+          <td>Total Cornholes</td>
+          <td id="cornP1">${col1CH}</td>
+          <td id="cornP2">${col2CH}</td>
+        `;
+        tfoot.appendChild(cornRow);
 
-    function editNames() {
-      const newP1 = prompt("Enter new name for Player 1:", document.getElementById("p1Header").textContent);
-      const newP2 = prompt("Enter new name for Player 2:", document.getElementById("p2Header").textContent);
-      if (newP1) document.getElementById("p1Header").textContent = newP1;
-      if (newP2) document.getElementById("p2Header").textContent = newP2;
+        const baggerRow = document.createElement("tr");
+        baggerRow.className = "totals";
+        baggerRow.id = "baggerTotalsRow";
+        baggerRow.innerHTML = `
+          <td>4-Baggers</td>
+          <td id="baggerP1">${col1Baggers}</td>
+          <td id="baggerP2">${col2Baggers}</td>
+        `;
+        tfoot.appendChild(baggerRow);
+      } else {
+        document.getElementById("cornP1").textContent = col1CH;
+        document.getElementById("cornP2").textContent = col2CH;
+        document.getElementById("baggerP1").textContent = col1Baggers;
+        document.getElementById("baggerP2").textContent = col2Baggers;
+      }
+    } else {
+      // remove cornhole and bagger totals if team mode
+      const cornRow = document.getElementById("cornholeTotalsRow");
+      if (cornRow) cornRow.remove();
+      const baggerRow = document.getElementById("baggerTotalsRow");
+      if (baggerRow) baggerRow.remove();
     }
-  </script>
+  }
+
+  function resetGame() {
+    document.getElementById("scoreTable").innerHTML = "";
+    roundCount = 0;
+    document.getElementById("totalCol1").textContent = "0";
+    document.getElementById("totalCol2").textContent = "0";
+
+    const cornRow = document.getElementById("cornholeTotalsRow");
+    if (cornRow) cornRow.remove();
+    const baggerRow = document.getElementById("baggerTotalsRow");
+    if (baggerRow) baggerRow.remove();
+  }
+
+  function editNames() {
+    if (mode === "solos") {
+      const newP1 = prompt("Enter new name for Player 1:", document.getElementById("col1Header").textContent);
+      const newP2 = prompt("Enter new name for Player 2:", document.getElementById("col2Header").textContent);
+      if (newP1) document.getElementById("col1Header").textContent = newP1;
+      if (newP2) document.getElementById("col2Header").textContent = newP2;
+    } else {
+      // For teams mode: allow editing team names directly
+      const newT1 = prompt("Enter new name for Team 1:", document.getElementById("col1Header").textContent);
+      const newT2 = prompt("Enter new name for Team 2:", document.getElementById("col2Header").textContent);
+      if (newT1) document.getElementById("col1Header").textContent = newT1;
+      if (newT2) document.getElementById("col2Header").textContent = newT2;
+    }
+  }
+</script>
 
 </body>
 </html>
