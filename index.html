@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cornhole Scoreboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f0f0f0;
+    }
+    h1 {
+      text-align: center;
+    }
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 20px;
+      border-collapse: collapse;
+      background: white;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 5px;
+    }
+    .totals {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Cornhole Scoreboard</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Round</th>
+        <th>Ben's Score</th>
+        <th>Dad's Score</th>
+      </tr>
+    </thead>
+    <tbody id="scoreTable">
+      <!-- Rows will be inserted here -->
+    </tbody>
+    <tfoot>
+      <tr class="totals">
+        <td>Total</td>
+        <td id="totalBen">0</td>
+        <td id="totalDad">0</td>
+      </tr>
+    </tfoot>
+  </table>
+
+  <div style="text-align:center;">
+    <button onclick="addRound()">➕ Add Round</button>
+    <button onclick="resetGame()">🔄 Reset</button>
+  </div>
+
+  <script>
+    function addRound() {
+      const table = document.getElementById("scoreTable");
+      const row = document.createElement("tr");
+
+      const roundNumber = table.rows.length + 1;
+      row.innerHTML = `
+        <td>Round ${roundNumber}</td>
+        <td><input type="number" min="0" value="0" onchange="updateTotals()" /></td>
+        <td><input type="number" min="0" value="0" onchange="updateTotals()" /></td>
+      `;
+      table.appendChild(row);
+      updateTotals();
+    }
+
+    function updateTotals() {
+      let totalBen = 0;
+      let totalDad = 0;
+      const rows = document.querySelectorAll("#scoreTable tr");
+
+      rows.forEach(row => {
+        const inputs = row.querySelectorAll("input");
+        totalBen += parseInt(inputs[0].value) || 0;
+        totalDad += parseInt(inputs[1].value) || 0;
+      });
+
+      document.getElementById("totalBen").textContent = totalBen;
+      document.getElementById("totalDad").textContent = totalDad;
+    }
+
+    function resetGame() {
+      document.getElementById("scoreTable").innerHTML = "";
+      document.getElementById("totalBen").textContent = "0";
+      document.getElementById("totalDad").textContent = "0";
+    }
+
+    // Start with 1 round
+    addRound();
+  </script>
+
+</body>
+</html>
