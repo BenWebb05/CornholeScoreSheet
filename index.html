@@ -1,659 +1,389 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cornhole Scoreboard</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cornhole Tracker</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #f0f0f0;
+      background: #f4f4f4;
+      margin: 0;
       padding: 20px;
-    }
-    h1 {
       text-align: center;
     }
-    .center {
-      text-align: center;
-      margin: 20px;
-    }
-    table {
-      width: 100%;
-      max-width: 900px;
-      margin: 0 auto 20px;
-      border-collapse: collapse;
+    .hidden { display: none; }
+    button { padding: 5px 10px; margin: 2px; cursor: pointer; }
+    input[type="number"] { width: 40px; text-align: center; }
+    .round-table {
+      margin: 20px auto;
+      width: 95%;
+      max-width: 1000px;
       background: white;
+      border-collapse: collapse;
     }
-    th, td {
+    .round-table th, .round-table td {
       border: 1px solid #ccc;
       padding: 10px;
-      vertical-align: top;
-      text-align: left;
-    }
-    /* Vertical separation for teams with individual tracking */
-    .team-separator {
-      border-right: 2px solid #888;
-    }
-    input[type="number"] {
-      width: 50px;
+      vertical-align: middle;
       text-align: center;
     }
-    button {
-      margin: 3px;
-      padding: 2px 6px;
-      cursor: pointer;
-    }
-    .totals {
-      font-weight: bold;
-      background-color: #e9e9e9;
-    }
-    .hidden {
-      display: none;
-    }
-    .field-group {
-      margin-bottom: 5px;
-    }
-    .flex-row {
+    .input-group {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 4px;
-      flex-wrap: nowrap;
     }
-    .flex-row label {
-      min-width: 30px;
-      font-weight: bold;
-    }
-    .flex-row button {
-      min-width: 28px;
-      height: 28px;
-      font-size: 20px;
-      line-height: 20px;
-      padding: 0;
-      border-radius: 4px;
-      border: 1px solid #888;
-      background: #eee;
-      user-select: none;
-    }
-    .locked {
-      background-color: #ddd !important;
-    }
-    #unlockToggle {
-      margin-bottom: 15px;
-    }
-    /* Center star checkbox */
-    .star-checkbox {
-      cursor: pointer;
-      font-size: 20px;
-      user-select: none;
+    .team-separator {
+      border-left: 3px solid #888;
     }
   </style>
 </head>
 <body>
-
-  <h1>Cornhole Scoreboard</h1>
-
-  <div id="modeSelection" class="center">
-    <p><strong>Choose Game Mode:</strong></p>
-    <button onclick="selectMode('solos')">Solos</button>
-    <button onclick="selectMode('teams')">Teams</button>
+  <div id="home">
+    <h1>Cornhole Game Tracker</h1>
+    <button onclick="showScreen('soloSetup')">🎯 Solo</button>
+    <button onclick="showScreen('teamSetup')">🤝 Teams</button>
+    <button onclick="showScreen('historyLogin')">📜 History</button>
   </div>
 
-  <!-- Solo Player Names -->
-  <div id="soloNameForm" class="center hidden">
-    <p><strong>Enter Player Names:</strong></p>
-    <input type="text" id="player1Name" placeholder="Player 1" value="Ben" />
-    <input type="text" id="player2Name" placeholder="Player 2" value="Dad" />
-    <br /><br />
-    <button onclick="startSoloGame()">Start Game</button>
+  <div id="soloSetup" class="hidden">
+    <h2>Solo Setup</h2>
+    <input id="soloP1" placeholder="Player 1" />
+    <input id="soloP2" placeholder="Player 2" />
+    <button onclick="startSoloGame()">✅ Start Game</button>
+    <button onclick="showScreen('home')">🔙 Back</button>
   </div>
 
-  <!-- Team Names -->
-  <div id="teamNameForm" class="center hidden">
-    <p><strong>Enter Team 1 Player Names:</strong></p>
-    <input type="text" id="team1Player1" placeholder="Team 1 Player 1" value="Ben" />
-    <input type="text" id="team1Player2" placeholder="Team 1 Player 2" value="Lilly" />
-    <p><strong>Enter Team 2 Player Names:</strong></p>
-    <input type="text" id="team2Player1" placeholder="Team 2 Player 1" value="Matt" />
-    <input type="text" id="team2Player2" placeholder="Team 2 Player 2" value="Maddy" />
-    <div class="field-group" style="margin-top:10px;">
-      <input type="checkbox" id="individualPlayers" />
-      <label for="individualPlayers">Casual Play</label>
-    </div>
-    <br />
-    <button onclick="startTeamGame()">Start Game</button>
+  <div id="teamSetup" class="hidden">
+    <h2>Team Setup</h2>
+    <input id="team1P1" placeholder="Team 1 - Player 1" />
+    <input id="team1P2" placeholder="Team 1 - Player 2" />
+    <input id="team2P1" placeholder="Team 2 - Player 1" />
+    <input id="team2P2" placeholder="Team 2 - Player 2" />
+    <button onclick="startTeamGame()">✅ Start Game</button>
+    <button onclick="showScreen('home')">🔙 Back</button>
   </div>
 
-  <div id="scoreboard" class="hidden">
-    <div class="center">
-      <button onclick="addRound()">➕ Add Round</button>
-      <button onclick="resetGame()">🔄 Reset</button>
-      <button onclick="editNames()">✏️ Edit Names</button>
-      <button id="unlockToggle" onclick="toggleUnlock()">🔓 Unlock All Rounds</button>
-    </div>
+  <div id="historyLogin" class="hidden">
+    <h2>Enter Passcode</h2>
+    <input type="password" id="historyPass" />
+    <button onclick="checkPasscode()">🔓 Submit</button>
+    <button onclick="showScreen('home')">🔙 Back</button>
+    <div id="historyError" style="color:red"></div>
+  </div>
 
-    <table>
-      <thead id="thead">
-        <!-- Filled dynamically -->
+  <div id="historyPage" class="hidden">
+    <div id="clearHistoryError" style="color:red"></div>
+    <h2>📜 Game History</h2>
+    <div id="historyList"></div>
+    <button onclick="showScreen('home')">🔙 Back</button>
+  </div>
+
+  <div id="teamGame" class="hidden"></div>
+  <div id="soloGame" class="hidden"></div>
+
+  <script>
+
+// ==================== Shared Functions ====================
+const history = JSON.parse(localStorage.getItem('cornholeHistory') || '[]');
+
+function showScreen(id) {
+  document.querySelectorAll('body > div').forEach(div => div.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+}
+
+function checkPasscode() {
+  const pass = document.getElementById('historyPass').value;
+  if (pass === '010623') {
+    showScreen('historyPage');
+    renderHistory();
+  } else {
+    document.getElementById('historyError').textContent = 'Incorrect passcode';
+  }
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (!history.length) {
+    list.innerHTML = '<p>No games found.</p>';
+    return;
+  }
+  list.innerHTML = `<button onclick="clearHistory()">🗑️ Clear History</button>` +
+    history.map(h => `
+    <div>
+      <h4>${h.summary}</h4>
+      <pre>${h.details}</pre>
+    </div>`).join('');
+}
+
+// ================= SOLO GAME =================
+let soloState = {
+  players: [],
+  rounds: [],
+  forceLock: false
+};
+
+function startSoloGame() {
+  const p1 = document.getElementById('soloP1').value.trim();
+  const p2 = document.getElementById('soloP2').value.trim();
+  if (!p1 || !p2) return alert('Please enter both player names.');
+  soloState.players = [p1, p2];
+  soloState.rounds = [];
+  soloState.forceLock = false;
+  addSoloRound();
+  renderSoloGame();
+  showScreen('soloGame');
+}
+
+function addSoloRound() {
+  soloState.rounds.push({ p0Pts: 0, p1Pts: 0, p0Corn: 0, p1Corn: 0, p04b: false, p14b: false });
+  renderSoloGame();
+}
+
+function updateSolo(i, key, value) {
+  soloState.rounds[i][key] = isNaN(value) ? 0 : +value;
+  renderSoloGame();
+}
+
+function changeSolo(i, key, delta) {
+  soloState.rounds[i][key] = (soloState.rounds[i][key] || 0) + delta;
+  renderSoloGame();
+}
+
+function toggleSolo4Bagger(i, player) {
+  const key = `p${player}4b`;
+  soloState.rounds[i][key] = !soloState.rounds[i][key];
+  renderSoloGame();
+}
+
+function resetSoloGame() {
+  if (confirm('Reset solo game?')) startSoloGame();
+}
+
+function editSoloNames() {
+  showScreen('soloSetup');
+}
+
+function toggleSoloLockRounds() {
+  soloState.forceLock = !soloState.forceLock;
+  renderSoloGame();
+}
+
+function completeSoloGame() {
+  if (!confirm('Are you sure the game is complete?')) return;
+  const { players, rounds } = soloState;
+  const summary = `${players[0]} vs ${players[1]}`;
+  let details = 'Round | ' + players[0] + ' (PNT/CH) | ' + players[1] + ' (PNT/CH) | Score | 4-Baggers\n';
+  let cumulative = [0, 0];
+  rounds.forEach((r, i) => {
+    cumulative[0] += r.p0Pts;
+    cumulative[1] += r.p1Pts;
+    const baggers = `${r.p04b ? '⭐' : ''} | ${r.p14b ? '⭐' : ''}`;
+    details += `${i + 1}     | ${r.p0Pts}/${r.p0Corn}         | ${r.p1Pts}/${r.p1Corn}         | ${cumulative[0]} - ${cumulative[1]} | ${baggers}
+`;
+  });
+  details += `
+Total: ${cumulative[0]} vs ${cumulative[1]}`;
+  history.push({ summary, details });
+  localStorage.setItem('cornholeHistory', JSON.stringify(history));
+  alert('Game logged to history!');
+  showScreen('home');
+}
+
+function renderSoloGame() {
+  const { players, rounds, forceLock } = soloState;
+  const unlockedIndex = rounds.length - 1;
+  let html = `
+    <h2>${players[0]} vs ${players[1]}</h2>
+    <button onclick="addSoloRound()">➕ Add Round</button>
+    <button onclick="resetSoloGame()">🔄 Reset</button>
+    <button onclick="editSoloNames()">✏️ Edit Names</button>
+    <button onclick="toggleSoloLockRounds()">
+      ${forceLock ? '🔒 Lock All Rounds' : '🔓 Unlock All Rounds'}</button>
+    <button onclick="completeSoloGame()">✅ Complete Game</button>
+    <table class="round-table">
+      <thead>
+        <tr><th>Round</th><th>${players[0]}</th><th>${players[1]}</th></tr>
       </thead>
-      <tbody id="scoreTable">
-        <!-- rounds go here -->
-      </tbody>
-      <tfoot id="totalsFooter">
-        <!-- Filled dynamically -->
+      <tbody>`;
+
+  rounds.forEach((r, i) => {
+    const locked = forceLock ? false : i < unlockedIndex;
+    html += `<tr>
+      <td>${i + 1}</td>
+      ${[0, 1].map(p => `
+        <td>
+          <div><strong>PNT</strong></div>
+          <div class='input-group'>
+            <button onclick='changeSolo(${i},"p${p}Pts",-1)' ${locked ? 'disabled' : ''}>-</button>
+            <input type='number' value='${r[`p${p}Pts`]}' onchange='updateSolo(${i},"p${p}Pts",this.value)' ${locked ? 'disabled' : ''}>
+            <button onclick='changeSolo(${i},"p${p}Pts",1)' ${locked ? 'disabled' : ''}>+</button>
+          </div>
+          <div><strong>CH</strong></div>
+          <div class='input-group'>
+            <button onclick='changeSolo(${i},"p${p}Corn",-1)' ${locked ? 'disabled' : ''}>-</button>
+            <input type='number' value='${r[`p${p}Corn`]}' onchange='updateSolo(${i},"p${p}Corn",this.value)' ${locked ? 'disabled' : ''}>
+            <button onclick='changeSolo(${i},"p${p}Corn",1)' ${locked ? 'disabled' : ''}>+</button>
+          </div>
+          <label><input type='checkbox' ${r[`p${p}4b`] ? 'checked' : ''} onchange='toggleSolo4Bagger(${i},${p})' ${locked ? 'disabled' : ''}/>⭐</label>
+        </td>`).join('')}
+    </tr>`;
+  });
+
+  html += `</tbody>
+    <tfoot>
+      <tr>
+        <td>Total</td>
+        ${[0, 1].map(p => {
+          const pts = rounds.reduce((sum, r) => sum + (+r[`p${p}Pts`] || 0), 0);
+          const corn = rounds.reduce((sum, r) => sum + (+r[`p${p}Corn`] || 0), 0);
+          const baggers = rounds.filter(r => r[`p${p}4b`]).length;
+          return `<td>${pts} PNTS<br>${corn} CH<br>${baggers} ⭐</td>`;
+        }).join('')}
+      </tr>
+    </tfoot>
+  </table>`;
+  document.getElementById('soloGame').innerHTML = html;
+}
+// ================= TEAM GAME =================
+let teamState = {
+  players: [],
+  rounds: [],
+  forceLock: false
+};
+
+function startTeamGame() {
+  const p = [
+    document.getElementById('team1P1').value.trim(),
+    document.getElementById('team1P2').value.trim(),
+    document.getElementById('team2P1').value.trim(),
+    document.getElementById('team2P2').value.trim()
+  ];
+  if (p.some(name => !name)) return alert('Enter all 4 player names');
+  teamState.players = p;
+  teamState.rounds = [];
+  teamState.forceLock = false;
+  addTeamRound();
+  renderTeamGame();
+  showScreen('teamGame');
+}
+
+function addTeamRound() {
+  teamState.rounds.push(Array(8).fill(0));
+  renderTeamGame();
+}
+
+function changeTeam(i, p, d) {
+  teamState.rounds[i][p] += d;
+  renderTeamGame();
+}
+
+function toggleTeamLockRounds() {
+  teamState.forceLock = !teamState.forceLock;
+  renderTeamGame();
+}
+
+function resetTeamGame() {
+  if (confirm('Reset team game?')) startTeamGame();
+}
+
+function editTeamNames() {
+  showScreen('teamSetup');
+}
+
+function completeTeamGame() {
+  if (!confirm('Are you sure the game is complete?')) return;
+  const { players, rounds } = teamState;
+  const summary = `${players[0]} & ${players[1]} vs ${players[2]} & ${players[3]}`;
+  let details = 'Round | ' + players.slice(0, 4).map(p => p + ' (PNT/CH)').join(' | ') + '\n';
+  rounds.forEach((r, i) => {
+    details += `${i + 1}     | ${r[0]}/${r[1]} | ${r[2]}/${r[3]} | ${r[4]}/${r[5]} | ${r[6]}/${r[7]}
+`;
+  });
+  const totalTeam1 = rounds.reduce((s, r) => s + r[0] + r[1] + r[2] + r[3], 0);
+  const totalTeam2 = rounds.reduce((s, r) => s + r[4] + r[5] + r[6] + r[7], 0);
+  details += `
+Total: ${totalTeam1} vs ${totalTeam2}`;
+  history.push({ summary, details });
+  localStorage.setItem('cornholeHistory', JSON.stringify(history));
+  alert('Game logged to history!');
+  showScreen('home');
+}
+
+function renderTeamGame() {
+  const { players, rounds, forceLock } = teamState;
+  const unlockedIndex = rounds.length - 1;
+  let html = `
+    <h2>${players[0]} & ${players[1]} vs ${players[2]} & ${players[3]}</h2>
+    <button onclick="addTeamRound()">➕ Add Round</button>
+    <button onclick="resetTeamGame()">🔄 Reset</button>
+    <button onclick="editTeamNames()">✏️ Edit Names</button>
+    <button onclick="toggleTeamLockRounds()">
+      ${forceLock ? '🔒 Lock All Rounds' : '🔓 Unlock All Rounds'}</button>
+    <button onclick="completeTeamGame()">✅ Complete Game</button>
+    <table class="round-table">
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th>${players[0]}</th>
+          <th>${players[1]}</th>
+          <th class="team-separator">${players[2]}</th>
+          <th>${players[3]}</th>
+        </tr>
+      </thead>
+      <tbody>`;
+  rounds.forEach((r, i) => {
+    const locked = forceLock ? false : i < unlockedIndex;
+    html += `<tr>
+      <td>${i + 1}</td>
+      ${[0, 2, 4, 6].map((p, idx) => `
+        <td${idx === 2 ? ' class="team-separator"' : ''}>
+          <div><strong>PNT</strong></div>
+          <div class='input-group'>
+            <button onclick='changeTeam(${i},${p},-1)' ${locked ? 'disabled' : ''}>-</button>
+            <input type='number' value='${r[p]}' onchange='changeTeam(${i},${p},0)' ${locked ? 'disabled' : ''}>
+            <button onclick='changeTeam(${i},${p},1)' ${locked ? 'disabled' : ''}>+</button>
+          </div>
+          <div><strong>CH</strong></div>
+          <div class='input-group'>
+            <button onclick='changeTeam(${i},${p+1},-1)' ${locked ? 'disabled' : ''}>-</button>
+            <input type='number' value='${r[p+1]}' onchange='changeTeam(${i},${p+1},0)' ${locked ? 'disabled' : ''}>
+            <button onclick='changeTeam(${i},${p+1},1)' ${locked ? 'disabled' : ''}>+</button>
+          </div>
+        </td>`).join('')}
+    </tr>`;
+  });
+  html += `</tbody>
+      <tfoot>
+        <tr>
+          <td>Total</td>
+          ${[0, 2, 4, 6].map((p, idx) => {
+            const pts = rounds.reduce((sum, r) => sum + r[p], 0);
+            const ch = rounds.reduce((sum, r) => sum + r[p+1], 0);
+            return `<td${idx === 2 ? ' class="team-separator"' : ''}>${pts} PNTS<br>${ch} CH</td>`;
+          }).join('')}
+        </tr>
+        <tr>
+          <td>Team Totals</td>
+          <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[0] + r[1] + r[2] + r[3], 0)} PNTS</strong></td>
+          <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[4] + r[5] + r[6] + r[7], 0)} PNTS</strong></td>
+        </tr>
       </tfoot>
-    </table>
-  </div>
-
-<script>
-  let mode = ""; // "solos" or "teams"
-  let roundCount = 0;
-  let trackIndividual = false;
-
-  function selectMode(selectedMode) {
-    mode = selectedMode;
-    document.getElementById("modeSelection").classList.add("hidden");
-    if (mode === "solos") {
-      document.getElementById("soloNameForm").classList.remove("hidden");
-    } else if (mode === "teams") {
-      document.getElementById("teamNameForm").classList.remove("hidden");
-    }
+    </table>`;
+  document.getElementById('teamGame').innerHTML = html;
+}
+function clearHistory() {
+  const code = prompt('Enter passcode to clear history:');
+  if (code !== '010623') {
+    document.getElementById('clearHistoryError').textContent = '❌ Incorrect passcode.';
+    return;
   }
-
-  function startSoloGame() {
-    trackIndividual = false; // solo mode no individual option
-    const p1 = document.getElementById("player1Name").value || "Player 1";
-    const p2 = document.getElementById("player2Name").value || "Player 2";
-    setupScoreboard(p1, p2);
-    document.getElementById("soloNameForm").classList.add("hidden");
-    document.getElementById("scoreboard").classList.remove("hidden");
-    resetGame();
-    addRound();
+  if (confirm('Are you sure you want to clear all history?')) {
+    localStorage.removeItem('cornholeHistory');
+    location.reload();
   }
-
-  function startTeamGame() {
-    trackIndividual = !document.getElementById("individualPlayers").checked;
-
-    const t1p1 = document.getElementById("team1Player1").value.trim() || "Team1Player1";
-    const t1p2 = document.getElementById("team1Player2").value.trim() || "Team1Player2";
-    const t2p1 = document.getElementById("team2Player1").value.trim() || "Team2Player1";
-    const t2p2 = document.getElementById("team2Player2").value.trim() || "Team2Player2";
-
-    
-if (trackIndividual) {
-      setupScoreboard(`${t1p1} & ${t1p2}`, `${t2p1} & ${t2p2}`, t1p1, t1p2, t2p1, t2p2);
-    } else {
-      const team1Name = `${t1p1} & ${t1p2}`;
-      const team2Name = `${t2p1} & ${t2p2}`;
-      setupScoreboard(team1Name, team2Name);
-    }
-    document.getElementById("teamNameForm").classList.add("hidden");
-    document.getElementById("scoreboard").classList.remove("hidden");
-    resetGame();
-    addRound();
-  }
-
-  // Setup scoreboard headers and totals footer dynamically based on mode and trackIndividual
-  function setupScoreboard(team1Name, team2Name, t1p1, t1p2, t2p1, t2p2) {
-    const thead = document.getElementById("thead");
-    const totalsFooter = document.getElementById("totalsFooter");
-    thead.innerHTML = "";
-    totalsFooter.innerHTML = "";
-
-    if (mode === "solos") {
-      // Solos mode header and footer
-      thead.innerHTML = `
-          <tr>
-            <th rowspan="3">Round</th>
-            <th colspan="2" class="team-separator" style="text-align:center;">${team1Name}</th>
-            <th colspan="2" style="text-align:center;">${team2Name}</th>
-            <th rowspan="3" style="min-width:80px; text-align:center;">Team 1 Total</th>
-            <th rowspan="3" style="min-width:80px; text-align:center;">Team 2 Total</th>
-          </tr>
-          <tr class="totals">
-            <td colspan="2" class="team-separator" id="headerTeam1Total">0</td>
-            <td colspan="2" id="headerTeam2Total">0</td>
-          </tr>
-          <tr id="headerRow">
-            <th class="team-separator">${t1p1}</th>
-            <th class="team-separator">${t1p2}</th>
-            <th>${t2p1}</th>
-            <th>${t2p2}</th>
-          </tr>
-        `;
-
-        totalsFooter.innerHTML = `
-          <tr class="totals">
-            <td colspan="1">Player Totals</td>
-            <td id="totalCol1P1">0</td>
-            <td id="totalCol1P2">0</td>
-            <td id="totalCol2P1">0</td>
-            <td id="totalCol2P2">0</td>
-            <td id="totalTeam1">0</td>
-            <td id="totalTeam2">0</td>
-          </tr>
-          <tr class="totals">
-            <td colspan="1">Cornholes</td>
-            <td id="totalCornholes1P1">0</td>
-            <td id="totalCornholes1P2">0</td>
-            <td id="totalCornholes2P1">0</td>
-            <td id="totalCornholes2P2">0</td>
-            <td id="totalTeam1CH">0</td>
-            <td id="totalTeam2CH">0</td>
-          </tr>
-        `;
-
-      } else {
-        // Teams without individual tracking, simple two columns for teams + totals
-        thead.innerHTML = `
-          <tr>
-            <th>Round</th>
-            <th>${names[0]}</th>
-            <th>${names[1]}</th>
-          </tr>
-        `;
-        totalsFooter.innerHTML = `
-          <tr class="totals">
-            <td>Total Points</td>
-            <td id="totalCol1">0</td>
-            <td id="totalCol2">0</td>
-          </tr>
-          <tr class="totals">
-            <td>Total Cornholes</td>
-            <td id="totalCornholes1">0</td>
-            <td id="totalCornholes2">0</td>
-          </tr>
-        `;
-      }
-    }
-  }
-
-  function addRound() {
-    roundCount++;
-    const tbody = document.getElementById("scoreTable");
-
-    const tr = document.createElement("tr");
-    tr.setAttribute("data-round", roundCount);
-
-    if (mode === "solos") {
-      tr.innerHTML = `
-        <td>${roundCount}</td>
-        <td>
-          <div class="flex-row">
-            <label>Points:</label>
-            <button onclick="changeValue(this, -1)">-</button>
-            <input type="number" value="0" min="0" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div class="flex-row" style="margin-top:6px;">
-            <label>Cornholes:</label>
-            <button onclick="changeValue(this, -1)">-</button>
-            <input type="number" value="0" min="0" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div style="text-align:center; margin-top:6px;">
-            <label class="star-checkbox" onclick="toggleStar(this)">⭐</label>
-            <input type="checkbox" style="display:none" />
-          </div>
-        </td>
-        <td>
-          <div class="flex-row">
-            <label>Points:</label>
-            <button onclick="changeValue(this, -1)">-</button>
-            <input type="number" value="0" min="0" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div class="flex-row" style="margin-top:6px;">
-            <label>Cornholes:</label>
-            <button onclick="changeValue(this, -1)">-</button>
-            <input type="number" value="0" min="0" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div style="text-align:center; margin-top:6px;">
-            <label class="star-checkbox" onclick="toggleStar(this)">⭐</label>
-            <input type="checkbox" style="display:none" />
-          </div>
-        </td>
-      `;
-    } else if (mode === "teams") {
-      if (trackIndividual) {
-        tr.innerHTML = `
-          <td>${roundCount}</td>
-          <td class="team-separator">
-            <div class="flex-row">
-              <label>Points:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-            <div class="flex-row" style="margin-top:6px;">
-              <label>Cornholes:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-          </td>
-          <td class="team-separator">
-            <div class="flex-row">
-              <label>Points:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-            <div class="flex-row" style="margin-top:6px;">
-              <label>Cornholes:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-          </td>
-          <td>
-            <div class="flex-row">
-              <label>Points:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-            <div class="flex-row" style="margin-top:6px;">
-              <label>Cornholes:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-          </td>
-          <td>
-            <div class="flex-row">
-              <label>Points:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-            <div class="flex-row" style="margin-top:6px;">
-              <label>Cornholes:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-          </td>
-          <td style="text-align:center; vertical-align: middle;"></td>
-          <td style="text-align:center; vertical-align: middle;"></td>
-        `;
-      } else {
-        tr.innerHTML = `
-          <td>${roundCount}</td>
-          <td>
-            <div class="flex-row">
-              <label>Points:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-            <div class="flex-row" style="margin-top:6px;">
-              <label>Cornholes:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-          </td>
-          <td>
-            <div class="flex-row">
-              <label>Points:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-            <div class="flex-row" style="margin-top:6px;">
-              <label>Cornholes:</label>
-              <button onclick="changeValue(this, -1)">-</button>
-              <input type="number" value="0" min="0" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-          </td>
-        `;
-      }
-    }
-
-    tbody.appendChild(tr);
-    updateTotals();
-    lockPreviousRounds();
-  }
-
-  function lockPreviousRounds() {
-    const rows = document.querySelectorAll("#scoreTable tr");
-    // Unlock all first
-    rows.forEach(row => {
-      Array.from(row.querySelectorAll("input, button")).forEach(el => {
-        el.disabled = false;
-        el.classList.remove("locked");
-      });
-    });
-    // Lock all but last
-    for (let i = 0; i < rows.length - 1; i++) {
-      const inputs = rows[i].querySelectorAll("input, button");
-      inputs.forEach(input => {
-        input.disabled = true;
-        input.classList.add("locked");
-      });
-    }
-  }
-
-  function toggleUnlock() {
-    const rows = document.querySelectorAll("#scoreTable tr");
-    const unlockBtn = document.getElementById("unlockToggle");
-    // Check if first round inputs are disabled to decide current state
-    const currentlyLocked = rows.length > 1 && rows[0].querySelector("input, button").disabled;
-
-    if (currentlyLocked) {
-      // Unlock all
-      rows.forEach(row => {
-        Array.from(row.querySelectorAll("input, button")).forEach(el => {
-          el.disabled = false;
-          el.classList.remove("locked");
-        });
-      });
-      unlockBtn.textContent = "🔒 Lock All Rounds";
-    } else {
-      // Lock all but last round
-      lockPreviousRounds();
-      unlockBtn.textContent = "🔓 Unlock All Rounds";
-    }
-  }
-
-  function changeValue(button, delta) {
-    const input = button.parentElement.querySelector("input[type='number']");
-    if (!input) return;
-    let newValue = parseInt(input.value) + delta;
-    if (newValue < 0) newValue = 0;
-    input.value = newValue;
-    updateTotals();
-  }
-
-  // Toggle star checkbox for 4-bagger in solos
-  function toggleStar(label) {
-    const cb = label.nextElementSibling;
-    cb.checked = !cb.checked;
-    label.style.color = cb.checked ? "gold" : "black";
-    updateTotals();
-  }
-
-  function updateTotals() {
-    const rows = document.querySelectorAll("#scoreTable tr");
-
-    if (mode === "solos") {
-      let totalPts1 = 0, totalPts2 = 0;
-      let totalCH1 = 0, totalCH2 = 0;
-      let total4B1 = 0, total4B2 = 0;
-
-      rows.forEach(row => {
-        const tds = row.querySelectorAll("td");
-        if (tds.length < 3) return;
-
-        // Player 1
-        const inputs1 = tds[1].querySelectorAll("input[type='number']");
-        const cb1 = tds[1].querySelector("input[type='checkbox']");
-        const pts1 = inputs1[0] ? parseInt(inputs1[0].value) || 0 : 0;
-        const ch1 = inputs1[1] ? parseInt(inputs1[1].value) || 0 : 0;
-        const b4_1 = cb1 && cb1.checked ? 1 : 0;
-
-        // Player 2
-        const inputs2 = tds[2].querySelectorAll("input[type='number']");
-        const cb2 = tds[2].querySelector("input[type='checkbox']");
-        const pts2 = inputs2[0] ? parseInt(inputs2[0].value) || 0 : 0;
-        const ch2 = inputs2[1] ? parseInt(inputs2[1].value) || 0 : 0;
-        const b4_2 = cb2 && cb2.checked ? 1 : 0;
-
-        totalPts1 += pts1;
-        totalCH1 += ch1;
-        total4B1 += b4_1;
-
-        totalPts2 += pts2;
-        totalCH2 += ch2;
-        total4B2 += b4_2;
-      });
-
-      document.getElementById("totalCol1").textContent = totalPts1;
-      document.getElementById("totalCol2").textContent = totalPts2;
-
-      document.getElementById("totalCornholes1").textContent = totalCH1;
-      document.getElementById("totalCornholes2").textContent = totalCH2;
-
-      document.getElementById("total4baggers1").textContent = total4B1;
-      document.getElementById("total4baggers2").textContent = total4B2;
-
-    } else if (mode === "teams") {
-      if (trackIndividual) {
-        // Per player totals:
-        let t1p1Pts=0, t1p2Pts=0, t2p1Pts=0, t2p2Pts=0;
-        let t1p1CH=0, t1p2CH=0, t2p1CH=0, t2p2CH=0;
-
-        let t1TeamPts=0, t2TeamPts=0;
-        let t1TeamCH=0, t2TeamCH=0;
-
-        rows.forEach(row => {
-          const tds = row.querySelectorAll("td");
-          if (tds.length < 7) return;
-
-          // Team 1 Player 1 inputs
-          const t1p1inputs = tds[1].querySelectorAll("input[type='number']");
-          const t1p1pts = t1p1inputs[0] ? parseInt(t1p1inputs[0].value) || 0 : 0;
-          const t1p1ch = t1p1inputs[1] ? parseInt(t1p1inputs[1].value) || 0 : 0;
-
-          // Team 1 Player 2 inputs
-          const t1p2inputs = tds[2].querySelectorAll("input[type='number']");
-          const t1p2pts = t1p2inputs[0] ? parseInt(t1p2inputs[0].value) || 0 : 0;
-          const t1p2ch = t1p2inputs[1] ? parseInt(t1p2inputs[1].value) || 0 : 0;
-
-          // Team 2 Player 1 inputs
-          const t2p1inputs = tds[3].querySelectorAll("input[type='number']");
-          const t2p1pts = t2p1inputs[0] ? parseInt(t2p1inputs[0].value) || 0 : 0;
-          const t2p1ch = t2p1inputs[1] ? parseInt(t2p1inputs[1].value) || 0 : 0;
-
-          // Team 2 Player 2 inputs
-          const t2p2inputs = tds[4].querySelectorAll("input[type='number']");
-          const t2p2pts = t2p2inputs[0] ? parseInt(t2p2inputs[0].value) || 0 : 0;
-          const t2p2ch = t2p2inputs[1] ? parseInt(t2p2inputs[1].value) || 0 : 0;
-
-          // Update individual totals
-          t1p1Pts += t1p1pts;
-          t1p1CH += t1p1ch;
-          t1p2Pts += t1p2pts;
-          t1p2CH += t1p2ch;
-          t2p1Pts += t2p1pts;
-          t2p1CH += t2p1ch;
-          t2p2Pts += t2p2pts;
-          t2p2CH += t2p2ch;
-
-          // Update team totals (sum of players)
-          const t1TotalPts = t1p1pts + t1p2pts;
-          const t2TotalPts = t2p1pts + t2p2pts;
-
-          const t1TotalCH = t1p1ch + t1p2ch;
-          const t2TotalCH = t2p1ch + t2p2ch;
-
-          // Update team totals cell in row
-          tds[5].textContent = t1TotalPts;
-          tds[6].textContent = t2TotalPts;
-
-          // Sum across rounds for total teams:
-          t1TeamPts += t1TotalPts;
-          t2TeamPts += t2TotalPts;
-          t1TeamCH += t1TotalCH;
-          t2TeamCH += t2TotalCH;
-        });
-
-        // Update footer totals for players
-        document.getElementById("totalCol1P1").textContent = t1p1Pts;
-        document.getElementById("totalCol1P2").textContent = t1p2Pts;
-        document.getElementById("totalCol2P1").textContent = t2p1Pts;
-        document.getElementById("totalCol2P2").textContent = t2p2Pts;
-
-        
-        document.getElementById("headerTeam1Total").textContent = t1TeamPts;
-        document.getElementById("headerTeam2Total").textContent = t2TeamPts;
-
-        // Update footer totals for teams
-        document.getElementById("totalTeam1").textContent = t1TeamPts;
-        document.getElementById("totalTeam2").textContent = t2TeamPts;
-
-        // Update footer cornholes totals
-        document.getElementById("totalCornholes1P1").textContent = t1p1CH;
-        document.getElementById("totalCornholes1P2").textContent = t1p2CH;
-        document.getElementById("totalCornholes2P1").textContent = t2p1CH;
-        document.getElementById("totalCornholes2P2").textContent = t2p2CH;
-
-        document.getElementById("totalTeam1CH").textContent = t1TeamCH;
-        document.getElementById("totalTeam2CH").textContent = t2TeamCH;
-
-      } else {
-        // Teams no individual tracking
-        let totalPts1 = 0, totalPts2 = 0;
-        let totalCH1 = 0, totalCH2 = 0;
-        const rows = document.querySelectorAll("#scoreTable tr");
-
-        rows.forEach(row => {
-          const tds = row.querySelectorAll("td");
-          if (tds.length < 3) return;
-
-          const inputs1 = tds[1].querySelectorAll("input[type='number']");
-          const inputs2 = tds[2].querySelectorAll("input[type='number']");
-
-          const pts1 = inputs1[0] ? parseInt(inputs1[0].value) || 0 : 0;
-          const ch1 = inputs1[1] ? parseInt(inputs1[1].value) || 0 : 0;
-
-          const pts2 = inputs2[0] ? parseInt(inputs2[0].value) || 0 : 0;
-          const ch2 = inputs2[1] ? parseInt(inputs2[1].value) || 0 : 0;
-
-          totalPts1 += pts1;
-          totalCH1 += ch1;
-
-          totalPts2 += pts2;
-          totalCH2 += ch2;
-        });
-
-        document.getElementById("totalCol1").textContent = totalPts1;
-        document.getElementById("totalCol2").textContent = totalPts2;
-        document.getElementById("totalCornholes1").textContent = totalCH1;
-        document.getElementById("totalCornholes2").textContent = totalCH2;
-      }
-    }
-  }
-
-  function resetGame() {
-    roundCount = 0;
-    document.getElementById("scoreTable").innerHTML = "";
-    updateTotals();
-  }
-
-  function editNames() {
-    if (mode === "solos") {
-      document.getElementById("scoreboard").classList.add("hidden");
-      document.getElementById("soloNameForm").classList.remove("hidden");
-      resetGame();
-    } else if (mode === "teams") {
-      document.getElementById("scoreboard").classList.add("hidden");
-      document.getElementById("teamNameForm").classList.remove("hidden");
-      resetGame();
-    }
-  }
+}
 </script>
 </body>
 </html>
