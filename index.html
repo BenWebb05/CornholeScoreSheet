@@ -183,8 +183,15 @@ function completeSoloGame() {
     details += `${i + 1}     | ${r.p0Pts}/${r.p0Corn}         | ${r.p1Pts}/${r.p1Corn}         | ${cumulative[0]} - ${cumulative[1]} | ${baggers}
 `;
   });
+  const playerTotals = players.map((_, i) => {
+    const pnt = rounds.reduce((sum, r) => sum + (r[`p${i}Pts`] || 0), 0);
+    const ch = rounds.reduce((sum, r) => sum + (r[`p${i}Corn`] || 0), 0);
+    return `${players[i]}: ${pnt} PNTS, ${ch} CH`;
+  }).join("\n");
   details += `
-Total: ${cumulative[0]} vs ${cumulative[1]}`;
+Total: ${cumulative[0]} vs ${cumulative[1]}
+
+${playerTotals}`;
   history.push({ summary, details });
   localStorage.setItem('cornholeHistory', JSON.stringify(history));
   alert('Game logged to history!');
@@ -242,7 +249,8 @@ function renderSoloGame() {
           return `<td>${pts} PNTS<br>${corn} CH<br>${baggers} ⭐</td>`;
         }).join('')}
       </tr>
-    </tfoot>
+    
+</tfoot>
   </table>`;
   document.getElementById('soloGame').innerHTML = html;
 }
@@ -296,15 +304,27 @@ function completeTeamGame() {
   if (!confirm('Are you sure the game is complete?')) return;
   const { players, rounds } = teamState;
   const summary = `${players[0]} & ${players[1]} vs ${players[2]} & ${players[3]}`;
-  let details = 'Round | ' + players.slice(0, 4).map(p => p + ' (PNT/CH)').join(' | ') + '\n';
+  let details = 'Round | ' + players.slice(0, 4).map(p => p + ' (PNT/CH)').join(' | ') + ' | Score\n';
+  let cumulative = [0, 0];
   rounds.forEach((r, i) => {
-    details += `${i + 1}     | ${r[0]}/${r[1]} | ${r[2]}/${r[3]} | ${r[4]}/${r[5]} | ${r[6]}/${r[7]}
+    const team1Total = r[0] + r[2];
+    const team2Total = r[4] + r[6];
+    cumulative[0] += team1Total;
+    cumulative[1] += team2Total;
+    details += `${i + 1}     | ${r[0]}/${r[1]} | ${r[2]}/${r[3]} | ${r[4]}/${r[5]} | ${r[6]}/${r[7]} | ${cumulative[0]} - ${cumulative[1]}
 `;
   });
-  const totalTeam1 = rounds.reduce((s, r) => s + r[0] + r[1] + r[2] + r[3], 0);
-  const totalTeam2 = rounds.reduce((s, r) => s + r[4] + r[5] + r[6] + r[7], 0);
+  const totalTeam1 = rounds.reduce((s, r) => s + r[0] + r[2], 0);
+  const totalTeam2 = rounds.reduce((s, r) => s + r[4] + r[6], 0);
+  const playerTotals = players.map((_, i) => {
+    const pnt = rounds.reduce((sum, r) => sum + (r[i * 2] || 0), 0);
+    const ch = rounds.reduce((sum, r) => sum + (r[i * 2 + 1] || 0), 0);
+    return `${players[i]}: ${pnt} PNTS, ${ch} CH`;
+  }).join("\n");
   details += `
-Total: ${totalTeam1} vs ${totalTeam2}`;
+Total: ${cumulative[0]} vs ${cumulative[1]}
+
+${playerTotals}`;
   history.push({ summary, details });
   localStorage.setItem('cornholeHistory', JSON.stringify(history));
   alert('Game logged to history!');
@@ -365,10 +385,15 @@ function renderTeamGame() {
           }).join('')}
         </tr>
         <tr>
-          <td>Team Totals</td>
-          <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[0] + r[1] + r[2] + r[3], 0)} PNTS</strong></td>
-          <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[4] + r[5] + r[6] + r[7], 0)} PNTS</strong></td>
-        </tr>
+  <td>Team Totals</td>
+  <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[0] + r[2], 0)} PNTS</strong></td>
+  <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[4] + r[6], 0)} PNTS</strong></td>
+</tr>
+<tr>
+  <td>Team CH Totals</td>
+  <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[1] + r[3], 0)} CH</strong></td>
+  <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[5] + r[7], 0)} CH</strong></td>
+</tr>
       </tfoot>
     </table>`;
   document.getElementById('teamGame').innerHTML = html;
