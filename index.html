@@ -16,7 +16,7 @@
     table {
       width: 100%;
       max-width: 600px;
-      margin: 0 auto 20px;
+      margin: 20px auto;
       border-collapse: collapse;
       background: white;
     }
@@ -32,45 +32,84 @@
     .totals {
       font-weight: bold;
     }
+    .center {
+      text-align: center;
+      margin: 20px;
+    }
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
 
   <h1>Cornhole Scoreboard</h1>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Round</th>
-        <th>Ben's Score</th>
-        <th>Dad's Score</th>
-      </tr>
-    </thead>
-    <tbody id="scoreTable">
-      <!-- Rows will be inserted here -->
-    </tbody>
-    <tfoot>
-      <tr class="totals">
-        <td>Total</td>
-        <td id="totalBen">0</td>
-        <td id="totalDad">0</td>
-      </tr>
-    </tfoot>
-  </table>
+  <div id="modeSelection" class="center">
+    <p><strong>Choose Game Mode:</strong></p>
+    <button onclick="startSolos()">Solos</button>
+    <button onclick="alert('Team mode coming soon!')">Teams</button>
+  </div>
 
-  <div style="text-align:center;">
-    <button onclick="addRound()">➕ Add Round</button>
-    <button onclick="resetGame()">🔄 Reset</button>
+  <div id="playerNameForm" class="center hidden">
+    <p><strong>Enter Player Names:</strong></p>
+    <input type="text" id="player1Name" placeholder="Player 1" value="Ben" />
+    <input type="text" id="player2Name" placeholder="Player 2" value="Dad" />
+    <br><br>
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <div id="scoreboard" class="hidden">
+    <table>
+      <thead>
+        <tr>
+          <th>Round</th>
+          <th id="player1Header">Player 1</th>
+          <th id="player2Header">Player 2</th>
+        </tr>
+      </thead>
+      <tbody id="scoreTable"></tbody>
+      <tfoot>
+        <tr class="totals">
+          <td>Total</td>
+          <td id="totalP1">0</td>
+          <td id="totalP2">0</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="center">
+      <button onclick="addRound()">➕ Add Round</button>
+      <button onclick="resetGame()">🔄 Reset</button>
+    </div>
   </div>
 
   <script>
+    function startSolos() {
+      document.getElementById("modeSelection").classList.add("hidden");
+      document.getElementById("playerNameForm").classList.remove("hidden");
+    }
+
+    function startGame() {
+      const p1 = document.getElementById("player1Name").value || "Player 1";
+      const p2 = document.getElementById("player2Name").value || "Player 2";
+
+      document.getElementById("player1Header").textContent = p1;
+      document.getElementById("player2Header").textContent = p2;
+
+      document.getElementById("playerNameForm").classList.add("hidden");
+      document.getElementById("scoreboard").classList.remove("hidden");
+
+      addRound();
+    }
+
     function addRound() {
       const table = document.getElementById("scoreTable");
       const row = document.createElement("tr");
+      const roundNum = table.rows.length + 1;
 
-      const roundNumber = table.rows.length + 1;
       row.innerHTML = `
-        <td>Round ${roundNumber}</td>
+        <td>Round ${roundNum}</td>
         <td><input type="number" min="0" value="0" onchange="updateTotals()" /></td>
         <td><input type="number" min="0" value="0" onchange="updateTotals()" /></td>
       `;
@@ -79,28 +118,25 @@
     }
 
     function updateTotals() {
-      let totalBen = 0;
-      let totalDad = 0;
+      let total1 = 0;
+      let total2 = 0;
       const rows = document.querySelectorAll("#scoreTable tr");
 
       rows.forEach(row => {
         const inputs = row.querySelectorAll("input");
-        totalBen += parseInt(inputs[0].value) || 0;
-        totalDad += parseInt(inputs[1].value) || 0;
+        total1 += parseInt(inputs[0].value) || 0;
+        total2 += parseInt(inputs[1].value) || 0;
       });
 
-      document.getElementById("totalBen").textContent = totalBen;
-      document.getElementById("totalDad").textContent = totalDad;
+      document.getElementById("totalP1").textContent = total1;
+      document.getElementById("totalP2").textContent = total2;
     }
 
     function resetGame() {
       document.getElementById("scoreTable").innerHTML = "";
-      document.getElementById("totalBen").textContent = "0";
-      document.getElementById("totalDad").textContent = "0";
+      document.getElementById("totalP1").textContent = "0";
+      document.getElementById("totalP2").textContent = "0";
     }
-
-    // Start with 1 round
-    addRound();
   </script>
 
 </body>
