@@ -140,7 +140,6 @@
 <script>
   let mode = ""; // "solos" or "teams"
   let roundCount = 0;
-  let roundsLocked = false;
 
   function selectMode(selectedMode) {
     mode = selectedMode;
@@ -184,10 +183,6 @@
   }
 
   function addRound() {
-    if (roundsLocked) {
-      alert("Please unlock rounds to add a new round.");
-      return;
-    }
     const table = document.getElementById("scoreTable");
     roundCount++;
     const row = document.createElement("tr");
@@ -265,14 +260,14 @@
     }
 
     table.appendChild(row);
-    lockPreviousRounds();
+    lockPreviousRounds(); // lock all but last round
     updateTotals();
   }
 
-  // Disable inputs for all rows except the last one
   function lockPreviousRounds() {
     const rows = document.querySelectorAll("#scoreTable tr");
-    // Unlock all first (to avoid stuck)
+
+    // Unlock all inputs first to clear previous locks
     rows.forEach(row => {
       Array.from(row.querySelectorAll("input, button")).forEach(el => {
         el.disabled = false;
@@ -280,6 +275,7 @@
       });
     });
 
+    // Lock all but the last row
     if (rows.length <= 1) return; // nothing to lock if only 1 round
 
     for (let i = 0; i < rows.length - 1; i++) {
@@ -289,118 +285,81 @@
         el.classList.add("locked");
       });
     }
-    roundsLocked = true;
   }
 
-  // Unlock all rounds for editing
+  // Unlock or lock all rounds on toggle
   function toggleUnlock() {
     const rows = document.querySelectorAll("#scoreTable tr");
     const unlockBtn = document.getElementById("unlockToggle");
 
-    if (roundsLocked) {
-      // Unlock
+    // Check if first round inputs are disabled to decide current state
+    const currentlyLocked = rows.length > 1 && rows[0].querySelector("input, button").disabled;
+
+    if (currentlyLocked) {
+      // Unlock all
       rows.forEach(row => {
         Array.from(row.querySelectorAll("input, button")).forEach(el => {
           el.disabled = false;
           el.classList.remove("locked");
         });
       });
-      roundsLocked = false;
-      unlockBtn.textContent = "🔓 Unlock All Rounds";
-    } else {
-      // Lock again
-      lockPreviousRounds();
       unlockBtn.textContent = "🔒 Lock All Rounds";
+    } else {
+      // Lock all but last round
+      lockPreviousRounds();
+      unlockBtn.textContent = "🔓 Unlock All Rounds";
     }
   }
 
   function changeValue(button, delta) {
-    if (button.disabled) return; // prevent changing locked inputs
     const input = button.parentElement.querySelector("input[type='number']");
-    let val = parseInt(input.value) || 0;
-    val = Math.max(0, val + delta);
-    input.value = val;
+    if (!input) return;
+    let newValue = parseInt(input.value) + delta;
+    if (newValue < 0) newValue = 0;
+    input.value = newValue;
     updateTotals();
   }
 
   function updateTotals() {
-    let col1Points = 0, col2Points = 0;
-    let col1CH = 0, col2CH = 0;
-    let col1Baggers = 0, col2Baggers = 0;
-
     const rows = document.querySelectorAll("#scoreTable tr");
+    let total1 = 0;
+    let total2 = 0;
 
     rows.forEach(row => {
-      const inputs = row.querySelectorAll("input");
+      const inputs = row.querySelectorAll("td:nth-child(2) input[type='number']");
+      const inputs2 = row.querySelectorAll("td:nth-child(3) input[type='number']");
 
-      if (mode === "teams") {
-        col1Points += parseInt(inputs[0].value) || 0;
-        col1CH += parseInt(inputs[1].value) || 0;
-        col2Points += parseInt(inputs[2].value) || 0;
-        col2CH += parseInt(inputs[3].value) || 0;
-      } else {
-        col1Points += parseInt(inputs[0].value) || 0;
-        const ch1 = parseInt(inputs[1].value) || 0;
-        col1CH += ch1;
-        if (inputs[2].checked || ch1 === 4) col1Baggers++;
+      if (inputs.length > 0) {
+        let pts = 0;
+        if (mode === "teams") {
+          // In teams mode inputs: first input = pts, second input = cornholes
+          pts = parseInt(inputs[0].value) || 0;
+        } else {
+          // Solos mode inputs: first input pts, second cornholes
+          pts = parseInt(inputs[0].value) || 0;
+        }
+        total1 += pts;
+      }
 
-        col2Points += parseInt(inputs[3].value) || 0;
-        const ch2 = parseInt(inputs[4].value) || 0;
-        col2CH += ch2;
-        if (inputs[5].checked || ch2 === 4) col2Baggers++;
+      if (inputs2.length > 0) {
+        let pts2 = 0;
+        if (mode === "teams") {
+          pts2 = parseInt(inputs2[0].value) || 0;
+        } else {
+          pts2 = parseInt(inputs2[0].value) || 0;
+        }
+        total2 += pts2;
       }
     });
 
-    document.getElementById("totalCol1").textContent = col1Points;
-    document.getElementById("totalCol2").textContent = col2Points;
-
-    if (mode === "solos") {
-      if (!document.getElementById("cornholeTotalsRow")) {
-        const tfoot = document.querySelector("table tfoot");
-        const cornRow = document.createElement("tr");
-        cornRow.className = "totals";
-        cornRow.id = "cornholeTotalsRow";
-        cornRow.innerHTML = `
-          <td>Total Cornholes</td>
-          <td id="cornP1">${col1CH}</td>
-          <td id="cornP2">${col2CH}</td>
-        `;
-        tfoot.appendChild(cornRow);
-
-        const baggerRow = document.createElement("tr");
-        baggerRow.className = "totals";
-        baggerRow.id = "baggerTotalsRow";
-        baggerRow.innerHTML = `
-          <td>4-Baggers</td>
-          <td id="baggerP1">${col1Baggers}</td>
-          <td id="baggerP2">${col2Baggers}</td>
-        `;
-        tfoot.appendChild(baggerRow);
-      } else {
-        document.getElementById("cornP1").textContent = col1CH;
-        document.getElementById("cornP2").textContent = col2CH;
-        document.getElementById("baggerP1").textContent = col1Baggers;
-        document.getElementById("baggerP2").textContent = col2Baggers;
-      }
-    } else {
-      const cornRow = document.getElementById("cornholeTotalsRow");
-      if (cornRow) cornRow.remove();
-      const baggerRow = document.getElementById("baggerTotalsRow");
-      if (baggerRow) baggerRow.remove();
-    }
+    document.getElementById("totalCol1").textContent = total1;
+    document.getElementById("totalCol2").textContent = total2;
   }
 
   function resetGame() {
-    document.getElementById("scoreTable").innerHTML = "";
     roundCount = 0;
-    document.getElementById("totalCol1").textContent = "0";
-    document.getElementById("totalCol2").textContent = "0";
-    const cornRow = document.getElementById("cornholeTotalsRow");
-    if (cornRow) cornRow.remove();
-    const baggerRow = document.getElementById("baggerTotalsRow");
-    if (baggerRow) baggerRow.remove();
-    roundsLocked = false;
-    document.getElementById("unlockToggle").textContent = "🔓 Unlock All Rounds";
+    document.getElementById("scoreTable").innerHTML = "";
+    updateTotals();
   }
 
   function editNames() {
