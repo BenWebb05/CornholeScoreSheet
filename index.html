@@ -117,7 +117,7 @@
     <input type="text" id="team2Player2" placeholder="Team 2 Player 2" value="Maddy" />
     <div class="field-group" style="margin-top:10px;">
       <input type="checkbox" id="individualPlayers" />
-      <label for="individualPlayers">Combine Into Teams</label>
+      <label for="individualPlayers">Casual Play</label>
     </div>
     <br />
     <button onclick="startTeamGame()">Start Game</button>
@@ -178,8 +178,9 @@
     const t2p1 = document.getElementById("team2Player1").value.trim() || "Team2Player1";
     const t2p2 = document.getElementById("team2Player2").value.trim() || "Team2Player2";
 
-    if (trackIndividual) {
-      setupScoreboard(t1p1, t1p2, t2p1, t2p2);
+    
+if (trackIndividual) {
+      setupScoreboard(`${t1p1} & ${t1p2}`, `${t2p1} & ${t2p2}`, t1p1, t1p2, t2p1, t2p2);
     } else {
       const team1Name = `${t1p1} & ${t1p2}`;
       const team2Name = `${t2p1} & ${t2p2}`;
@@ -192,7 +193,7 @@
   }
 
   // Setup scoreboard headers and totals footer dynamically based on mode and trackIndividual
-  function setupScoreboard(...names) {
+  function setupScoreboard(team1Name, team2Name, t1p1, t1p2, t2p1, t2p2) {
     const thead = document.getElementById("thead");
     const totalsFooter = document.getElementById("totalsFooter");
     thead.innerHTML = "";
@@ -201,51 +202,28 @@
     if (mode === "solos") {
       // Solos mode header and footer
       thead.innerHTML = `
-        <tr>
-          <th>Round</th>
-          <th>${names[0]}</th>
-          <th>${names[1]}</th>
-        </tr>
-      `;
-      totalsFooter.innerHTML = `
-        <tr class="totals">
-          <td>Total Points</td>
-          <td id="totalCol1">0</td>
-          <td id="totalCol2">0</td>
-        </tr>
-        <tr class="totals">
-          <td>Total Cornholes</td>
-          <td id="totalCornholes1">0</td>
-          <td id="totalCornholes2">0</td>
-        </tr>
-        <tr class="totals">
-          <td>Total 4-Baggers ⭐</td>
-          <td id="total4baggers1">0</td>
-          <td id="total4baggers2">0</td>
-        </tr>
-      `;
-    } else if (mode === "teams") {
-      if (trackIndividual) {
-        // Individual tracking for teams: add team headers row + player names row + totals for each team separately
-        thead.innerHTML = `
           <tr>
-            <th rowspan="2">Round</th>
-            <th colspan="2" class="team-separator" style="text-align:center;">Team 1</th>
-            <th colspan="2" style="text-align:center;">Team 2</th>
-            <th rowspan="2" style="min-width:80px; text-align:center;">Team 1 Total</th>
-            <th rowspan="2" style="min-width:80px; text-align:center;">Team 2 Total</th>
+            <th rowspan="3">Round</th>
+            <th colspan="2" class="team-separator" style="text-align:center;">${team1Name}</th>
+            <th colspan="2" style="text-align:center;">${team2Name}</th>
+            <th rowspan="3" style="min-width:80px; text-align:center;">Team 1 Total</th>
+            <th rowspan="3" style="min-width:80px; text-align:center;">Team 2 Total</th>
+          </tr>
+          <tr class="totals">
+            <td colspan="2" class="team-separator" id="headerTeam1Total">0</td>
+            <td colspan="2" id="headerTeam2Total">0</td>
           </tr>
           <tr id="headerRow">
-            <th class="team-separator">${names[0]}</th>
-            <th class="team-separator">${names[1]}</th>
-            <th>${names[2]}</th>
-            <th>${names[3]}</th>
+            <th class="team-separator">${t1p1}</th>
+            <th class="team-separator">${t1p2}</th>
+            <th>${t2p1}</th>
+            <th>${t2p2}</th>
           </tr>
         `;
 
         totalsFooter.innerHTML = `
           <tr class="totals">
-            <td colspan="1">Totals</td>
+            <td colspan="1">Player Totals</td>
             <td id="totalCol1P1">0</td>
             <td id="totalCol1P2">0</td>
             <td id="totalCol2P1">0</td>
@@ -263,6 +241,7 @@
             <td id="totalTeam2CH">0</td>
           </tr>
         `;
+
       } else {
         // Teams without individual tracking, simple two columns for teams + totals
         thead.innerHTML = `
@@ -606,6 +585,10 @@
         document.getElementById("totalCol1P2").textContent = t1p2Pts;
         document.getElementById("totalCol2P1").textContent = t2p1Pts;
         document.getElementById("totalCol2P2").textContent = t2p2Pts;
+
+        
+        document.getElementById("headerTeam1Total").textContent = t1TeamPts;
+        document.getElementById("headerTeam2Total").textContent = t2TeamPts;
 
         // Update footer totals for teams
         document.getElementById("totalTeam1").textContent = t1TeamPts;
