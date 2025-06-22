@@ -7,8 +7,8 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       background: #f0f0f0;
+      padding: 20px;
     }
     h1 {
       text-align: center;
@@ -33,14 +33,18 @@
     input[type="number"] {
       width: 50px;
     }
+    button {
+      margin: 3px;
+      padding: 2px 6px;
+    }
     .totals {
       font-weight: bold;
     }
     .hidden {
       display: none;
     }
-    button {
-      margin: 5px;
+    .field-group {
+      margin-bottom: 5px;
     }
   </style>
 </head>
@@ -127,17 +131,49 @@
       row.innerHTML = `
         <td>Round ${roundNumber}</td>
         <td>
-          Pts: <input type="number" min="0" value="0" onchange="updateTotals()" /><br>
-          CH: <input type="number" min="0" value="0" onchange="updateTotals()" /><br>
-          ⭐: <input type="checkbox" onchange="updateTotals()" />
+          <div class="field-group">
+            Pts: 
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div class="field-group">
+            CH: 
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div class="field-group">
+            ⭐: <input type="checkbox" onchange="updateTotals()" />
+          </div>
         </td>
         <td>
-          Pts: <input type="number" min="0" value="0" onchange="updateTotals()" /><br>
-          CH: <input type="number" min="0" value="0" onchange="updateTotals()" /><br>
-          ⭐: <input type="checkbox" onchange="updateTotals()" />
+          <div class="field-group">
+            Pts: 
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div class="field-group">
+            CH: 
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div class="field-group">
+            ⭐: <input type="checkbox" onchange="updateTotals()" />
+          </div>
         </td>
       `;
       table.appendChild(row);
+      updateTotals();
+    }
+
+    function changeValue(button, delta) {
+      const input = button.parentElement.querySelector("input[type='number']");
+      let val = parseInt(input.value) || 0;
+      val = Math.max(0, val + delta);
+      input.value = val;
       updateTotals();
     }
 
