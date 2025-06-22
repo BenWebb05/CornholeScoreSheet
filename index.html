@@ -7,37 +7,40 @@
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 20px;
       background: #f0f0f0;
+      padding: 20px;
     }
     h1 {
       text-align: center;
-    }
-    table {
-      width: 100%;
-      max-width: 600px;
-      margin: 20px auto;
-      border-collapse: collapse;
-      background: white;
-    }
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
-    }
-    input[type="number"] {
-      width: 60px;
-      padding: 5px;
-    }
-    .totals {
-      font-weight: bold;
     }
     .center {
       text-align: center;
       margin: 20px;
     }
+    table {
+      width: 100%;
+      overflow-x: auto;
+      background: #fff;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 6px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    input[type="number"] {
+      width: 50px;
+    }
+    input[type="text"] {
+      width: 100px;
+    }
     .hidden {
       display: none;
+    }
+    button {
+      margin: 5px;
     }
   </style>
 </head>
@@ -60,31 +63,48 @@
   </div>
 
   <div id="scoreboard" class="hidden">
-    <table>
-      <thead>
-        <tr>
-          <th>Round</th>
-          <th id="player1Header">Player 1</th>
-          <th id="player2Header">Player 2</th>
-        </tr>
-      </thead>
-      <tbody id="scoreTable"></tbody>
-      <tfoot>
-        <tr class="totals">
-          <td>Total</td>
-          <td id="totalP1">0</td>
-          <td id="totalP2">0</td>
-        </tr>
-      </tfoot>
-    </table>
-
     <div class="center">
       <button onclick="addRound()">➕ Add Round</button>
       <button onclick="resetGame()">🔄 Reset</button>
+      <button onclick="editNames()">✏️ Edit Names</button>
     </div>
+    <table id="scoreTable">
+      <thead id="tableHead">
+        <tr>
+          <th>Player</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <tr id="player1Row">
+          <td id="p1Name">Player 1</td>
+        </tr>
+        <tr id="player2Row">
+          <td id="p2Name">Player 2</td>
+        </tr>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td><strong>Total Points</strong></td>
+          <td id="p1Total">0</td>
+          <td id="p2Total">0</td>
+        </tr>
+        <tr>
+          <td><strong>Total Cornholes</strong></td>
+          <td id="p1Corn">0</td>
+          <td id="p2Corn">0</td>
+        </tr>
+        <tr>
+          <td><strong>4-Baggers</strong></td>
+          <td id="p1Baggers">0</td>
+          <td id="p2Baggers">0</td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
 
   <script>
+    let roundCount = 0;
+
     function startSolos() {
       document.getElementById("modeSelection").classList.add("hidden");
       document.getElementById("playerNameForm").classList.remove("hidden");
@@ -94,8 +114,8 @@
       const p1 = document.getElementById("player1Name").value || "Player 1";
       const p2 = document.getElementById("player2Name").value || "Player 2";
 
-      document.getElementById("player1Header").textContent = p1;
-      document.getElementById("player2Header").textContent = p2;
+      document.getElementById("p1Name").textContent = p1;
+      document.getElementById("p2Name").textContent = p2;
 
       document.getElementById("playerNameForm").classList.add("hidden");
       document.getElementById("scoreboard").classList.remove("hidden");
@@ -104,38 +124,83 @@
     }
 
     function addRound() {
-      const table = document.getElementById("scoreTable");
-      const row = document.createElement("tr");
-      const roundNum = table.rows.length + 1;
+      roundCount++;
 
-      row.innerHTML = `
-        <td>Round ${roundNum}</td>
-        <td><input type="number" min="0" value="0" onchange="updateTotals()" /></td>
-        <td><input type="number" min="0" value="0" onchange="updateTotals()" /></td>
+      // Add to table head
+      const headRow = document.getElementById("tableHead").rows[0];
+      const th = document.createElement("th");
+      th.innerHTML = `Round ${roundCount}<br>Pts | CH | ⭐`;
+      headRow.appendChild(th);
+
+      // Player 1
+      const p1Row = document.getElementById("player1Row");
+      const p1Cell = document.createElement("td");
+      p1Cell.innerHTML = `
+        <input type="number" min="0" value="0" onchange="updateTotals()" placeholder="Pts"/><br>
+        <input type="number" min="0" value="0" onchange="updateTotals()" placeholder="CH"/><br>
+        <input type="checkbox" onchange="updateTotals()" />
       `;
-      table.appendChild(row);
+      p1Row.appendChild(p1Cell);
+
+      // Player 2
+      const p2Row = document.getElementById("player2Row");
+      const p2Cell = document.createElement("td");
+      p2Cell.innerHTML = p1Cell.innerHTML;
+      p2Row.appendChild(p2Cell);
+
       updateTotals();
     }
 
     function updateTotals() {
-      let total1 = 0;
-      let total2 = 0;
-      const rows = document.querySelectorAll("#scoreTable tr");
+      let p1Points = 0, p2Points = 0;
+      let p1CH = 0, p2CH = 0;
+      let p1Baggers = 0, p2Baggers = 0;
 
-      rows.forEach(row => {
-        const inputs = row.querySelectorAll("input");
-        total1 += parseInt(inputs[0].value) || 0;
-        total2 += parseInt(inputs[1].value) || 0;
+      const p1Row = document.getElementById("player1Row").querySelectorAll("td:not(:first-child)");
+      const p2Row = document.getElementById("player2Row").querySelectorAll("td:not(:first-child)");
+
+      p1Row.forEach(cell => {
+        const inputs = cell.querySelectorAll("input");
+        p1Points += parseInt(inputs[0].value) || 0;
+        const ch = parseInt(inputs[1].value) || 0;
+        p1CH += ch;
+        if (inputs[2].checked || ch === 4) p1Baggers++;
       });
 
-      document.getElementById("totalP1").textContent = total1;
-      document.getElementById("totalP2").textContent = total2;
+      p2Row.forEach(cell => {
+        const inputs = cell.querySelectorAll("input");
+        p2Points += parseInt(inputs[0].value) || 0;
+        const ch = parseInt(inputs[1].value) || 0;
+        p2CH += ch;
+        if (inputs[2].checked || ch === 4) p2Baggers++;
+      });
+
+      document.getElementById("p1Total").textContent = p1Points;
+      document.getElementById("p2Total").textContent = p2Points;
+      document.getElementById("p1Corn").textContent = p1CH;
+      document.getElementById("p2Corn").textContent = p2CH;
+      document.getElementById("p1Baggers").textContent = p1Baggers;
+      document.getElementById("p2Baggers").textContent = p2Baggers;
     }
 
     function resetGame() {
-      document.getElementById("scoreTable").innerHTML = "";
-      document.getElementById("totalP1").textContent = "0";
-      document.getElementById("totalP2").textContent = "0";
+      roundCount = 0;
+      document.getElementById("tableHead").innerHTML = `<tr><th>Player</th></tr>`;
+      document.getElementById("player1Row").innerHTML = `<td id="p1Name">Player 1</td>`;
+      document.getElementById("player2Row").innerHTML = `<td id="p2Name">Player 2</td>`;
+      document.getElementById("p1Total").textContent = "0";
+      document.getElementById("p2Total").textContent = "0";
+      document.getElementById("p1Corn").textContent = "0";
+      document.getElementById("p2Corn").textContent = "0";
+      document.getElementById("p1Baggers").textContent = "0";
+      document.getElementById("p2Baggers").textContent = "0";
+    }
+
+    function editNames() {
+      const newP1 = prompt("Enter new name for Player 1:", document.getElementById("p1Name").textContent);
+      const newP2 = prompt("Enter new name for Player 2:", document.getElementById("p2Name").textContent);
+      if (newP1) document.getElementById("p1Name").textContent = newP1;
+      if (newP2) document.getElementById("p2Name").textContent = newP2;
     }
   </script>
 
