@@ -32,6 +32,7 @@
     }
     input[type="number"] {
       width: 50px;
+      text-align: center;
     }
     button {
       margin: 3px;
@@ -47,7 +48,6 @@
     .field-group {
       margin-bottom: 5px;
     }
-    /* Flex row for aligned buttons and inputs */
     .flex-row {
       display: flex;
       align-items: center;
@@ -57,10 +57,6 @@
     .flex-row label {
       min-width: 30px;
       font-weight: bold;
-    }
-    .flex-row input[type="number"] {
-      width: 50px;
-      text-align: center;
     }
     .flex-row button {
       min-width: 28px;
@@ -72,6 +68,12 @@
       border: 1px solid #888;
       background: #eee;
       user-select: none;
+    }
+    .locked {
+      background-color: #ddd !important;
+    }
+    #unlockToggle {
+      margin-bottom: 15px;
     }
   </style>
 </head>
@@ -106,12 +108,12 @@
     <button onclick="startTeamGame()">Start Game</button>
   </div>
 
-  <!-- Scoreboard for both modes -->
   <div id="scoreboard" class="hidden">
     <div class="center">
       <button onclick="addRound()">➕ Add Round</button>
       <button onclick="resetGame()">🔄 Reset</button>
       <button onclick="editNames()">✏️ Edit Names</button>
+      <button id="unlockToggle" onclick="toggleUnlock()">🔓 Unlock All Rounds</button>
     </div>
 
     <table>
@@ -123,7 +125,7 @@
         </tr>
       </thead>
       <tbody id="scoreTable">
-        <!-- rounds here -->
+        <!-- rounds go here -->
       </tbody>
       <tfoot>
         <tr class="totals">
@@ -138,6 +140,7 @@
 <script>
   let mode = ""; // "solos" or "teams"
   let roundCount = 0;
+  let roundsLocked = false;
 
   function selectMode(selectedMode) {
     mode = selectedMode;
@@ -175,18 +178,20 @@
     addRound();
   }
 
-  // Setup scoreboard headers based on names
   function setupScoreboard(name1, name2) {
     document.getElementById("col1Header").textContent = name1;
     document.getElementById("col2Header").textContent = name2;
   }
 
   function addRound() {
+    if (roundsLocked) {
+      alert("Please unlock rounds to add a new round.");
+      return;
+    }
     const table = document.getElementById("scoreTable");
     roundCount++;
     const row = document.createElement("tr");
 
-    // For teams mode, only track points
     if (mode === "teams") {
       row.innerHTML = `
         <td>Round ${roundCount}</td>
@@ -197,6 +202,12 @@
             <input type="number" value="0" min="0" onchange="updateTotals()" />
             <button onclick="changeValue(this, 1)">+</button>
           </div>
+          <div class="flex-row">
+            <label>CH:</label>
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
         </td>
         <td>
           <div class="flex-row">
@@ -205,10 +216,15 @@
             <input type="number" value="0" min="0" onchange="updateTotals()" />
             <button onclick="changeValue(this, 1)">+</button>
           </div>
+          <div class="flex-row">
+            <label>CH:</label>
+            <button onclick="changeValue(this, -1)">–</button>
+            <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
         </td>
       `;
     } else {
-      // solos mode: points, cornholes, 4-bagger checkbox
       row.innerHTML = `
         <td>Round ${roundCount}</td>
         <td>
@@ -249,10 +265,57 @@
     }
 
     table.appendChild(row);
+    lockPreviousRounds();
     updateTotals();
   }
 
+  // Disable inputs for all rows except the last one
+  function lockPreviousRounds() {
+    const rows = document.querySelectorAll("#scoreTable tr");
+    // Unlock all first (to avoid stuck)
+    rows.forEach(row => {
+      Array.from(row.querySelectorAll("input, button")).forEach(el => {
+        el.disabled = false;
+        el.classList.remove("locked");
+      });
+    });
+
+    if (rows.length <= 1) return; // nothing to lock if only 1 round
+
+    for (let i = 0; i < rows.length - 1; i++) {
+      const row = rows[i];
+      Array.from(row.querySelectorAll("input, button")).forEach(el => {
+        el.disabled = true;
+        el.classList.add("locked");
+      });
+    }
+    roundsLocked = true;
+  }
+
+  // Unlock all rounds for editing
+  function toggleUnlock() {
+    const rows = document.querySelectorAll("#scoreTable tr");
+    const unlockBtn = document.getElementById("unlockToggle");
+
+    if (roundsLocked) {
+      // Unlock
+      rows.forEach(row => {
+        Array.from(row.querySelectorAll("input, button")).forEach(el => {
+          el.disabled = false;
+          el.classList.remove("locked");
+        });
+      });
+      roundsLocked = false;
+      unlockBtn.textContent = "🔓 Unlock All Rounds";
+    } else {
+      // Lock again
+      lockPreviousRounds();
+      unlockBtn.textContent = "🔒 Lock All Rounds";
+    }
+  }
+
   function changeValue(button, delta) {
+    if (button.disabled) return; // prevent changing locked inputs
     const input = button.parentElement.querySelector("input[type='number']");
     let val = parseInt(input.value) || 0;
     val = Math.max(0, val + delta);
@@ -272,7 +335,9 @@
 
       if (mode === "teams") {
         col1Points += parseInt(inputs[0].value) || 0;
-        col2Points += parseInt(inputs[1].value) || 0;
+        col1CH += parseInt(inputs[1].value) || 0;
+        col2Points += parseInt(inputs[2].value) || 0;
+        col2CH += parseInt(inputs[3].value) || 0;
       } else {
         col1Points += parseInt(inputs[0].value) || 0;
         const ch1 = parseInt(inputs[1].value) || 0;
@@ -290,7 +355,6 @@
     document.getElementById("totalCol2").textContent = col2Points;
 
     if (mode === "solos") {
-      // Add totals rows for CH and 4-baggers if solos mode
       if (!document.getElementById("cornholeTotalsRow")) {
         const tfoot = document.querySelector("table tfoot");
         const cornRow = document.createElement("tr");
@@ -319,7 +383,6 @@
         document.getElementById("baggerP2").textContent = col2Baggers;
       }
     } else {
-      // remove cornhole and bagger totals if team mode
       const cornRow = document.getElementById("cornholeTotalsRow");
       if (cornRow) cornRow.remove();
       const baggerRow = document.getElementById("baggerTotalsRow");
@@ -332,11 +395,12 @@
     roundCount = 0;
     document.getElementById("totalCol1").textContent = "0";
     document.getElementById("totalCol2").textContent = "0";
-
     const cornRow = document.getElementById("cornholeTotalsRow");
     if (cornRow) cornRow.remove();
     const baggerRow = document.getElementById("baggerTotalsRow");
     if (baggerRow) baggerRow.remove();
+    roundsLocked = false;
+    document.getElementById("unlockToggle").textContent = "🔓 Unlock All Rounds";
   }
 
   function editNames() {
@@ -346,7 +410,6 @@
       if (newP1) document.getElementById("col1Header").textContent = newP1;
       if (newP2) document.getElementById("col2Header").textContent = newP2;
     } else {
-      // For teams mode: allow editing team names directly
       const newT1 = prompt("Enter new name for Team 1:", document.getElementById("col1Header").textContent);
       const newT2 = prompt("Enter new name for Team 2:", document.getElementById("col2Header").textContent);
       if (newT1) document.getElementById("col1Header").textContent = newT1;
