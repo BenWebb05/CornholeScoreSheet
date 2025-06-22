@@ -19,7 +19,7 @@
     }
     table {
       width: 100%;
-      max-width: 800px;
+      max-width: 900px;
       margin: 0 auto 20px;
       border-collapse: collapse;
       background: white;
@@ -29,6 +29,10 @@
       padding: 10px;
       vertical-align: top;
       text-align: left;
+    }
+    /* Vertical separation for teams with individual tracking */
+    .team-separator {
+      border-right: 2px solid #888;
     }
     input[type="number"] {
       width: 50px;
@@ -41,6 +45,7 @@
     }
     .totals {
       font-weight: bold;
+      background-color: #e9e9e9;
     }
     .hidden {
       display: none;
@@ -75,6 +80,12 @@
     #unlockToggle {
       margin-bottom: 15px;
     }
+    /* Center star checkbox */
+    .star-checkbox {
+      cursor: pointer;
+      font-size: 20px;
+      user-select: none;
+    }
   </style>
 </head>
 <body>
@@ -106,7 +117,7 @@
     <input type="text" id="team2Player2" placeholder="Team 2 Player 2" value="Maddy" />
     <div class="field-group" style="margin-top:10px;">
       <input type="checkbox" id="individualPlayers" />
-      <label for="individualPlayers">Track individual player points and cornholes</label>
+      <label for="individualPlayers">Individual Tracking</label>
     </div>
     <br />
     <button onclick="startTeamGame()">Start Game</button>
@@ -121,10 +132,8 @@
     </div>
 
     <table>
-      <thead>
-        <tr id="headerRow">
-          <!-- Filled dynamically -->
-        </tr>
+      <thead id="thead">
+        <!-- Filled dynamically -->
       </thead>
       <tbody id="scoreTable">
         <!-- rounds go here -->
@@ -184,17 +193,19 @@
 
   // Setup scoreboard headers and totals footer dynamically based on mode and trackIndividual
   function setupScoreboard(...names) {
-    const headerRow = document.getElementById("headerRow");
+    const thead = document.getElementById("thead");
     const totalsFooter = document.getElementById("totalsFooter");
-    headerRow.innerHTML = "";
+    thead.innerHTML = "";
     totalsFooter.innerHTML = "";
 
     if (mode === "solos") {
-      // Just Player 1 and Player 2 columns
-      headerRow.innerHTML = `
-        <th>Round</th>
-        <th>${names[0]}</th>
-        <th>${names[1]}</th>
+      // Solos mode header and footer
+      thead.innerHTML = `
+        <tr>
+          <th>Round</th>
+          <th>${names[0]}</th>
+          <th>${names[1]}</th>
+        </tr>
       `;
       totalsFooter.innerHTML = `
         <tr class="totals">
@@ -208,26 +219,33 @@
           <td id="totalCornholes2">0</td>
         </tr>
         <tr class="totals">
-          <td>Total 4-Baggers</td>
+          <td>Total 4-Baggers ⭐</td>
           <td id="total4baggers1">0</td>
           <td id="total4baggers2">0</td>
         </tr>
       `;
     } else if (mode === "teams") {
       if (trackIndividual) {
-        // Individual players: 4 columns
-        headerRow.innerHTML = `
-          <th>Round</th>
-          <th>${names[0]} (T1)</th>
-          <th>${names[1]} (T1)</th>
-          <th>${names[2]} (T2)</th>
-          <th>${names[3]} (T2)</th>
-          <th>Team 1 Total</th>
-          <th>Team 2 Total</th>
+        // Individual tracking for teams: add team headers row + player names row + totals for each team separately
+        thead.innerHTML = `
+          <tr>
+            <th rowspan="2">Round</th>
+            <th colspan="2" class="team-separator" style="text-align:center;">Team 1</th>
+            <th colspan="2" style="text-align:center;">Team 2</th>
+            <th rowspan="2" style="min-width:80px; text-align:center;">Team 1 Total</th>
+            <th rowspan="2" style="min-width:80px; text-align:center;">Team 2 Total</th>
+          </tr>
+          <tr id="headerRow">
+            <th class="team-separator">${names[0]}</th>
+            <th class="team-separator">${names[1]}</th>
+            <th>${names[2]}</th>
+            <th>${names[3]}</th>
+          </tr>
         `;
+
         totalsFooter.innerHTML = `
           <tr class="totals">
-            <td>Total Points</td>
+            <td colspan="1">Totals</td>
             <td id="totalCol1P1">0</td>
             <td id="totalCol1P2">0</td>
             <td id="totalCol2P1">0</td>
@@ -236,7 +254,7 @@
             <td id="totalTeam2">0</td>
           </tr>
           <tr class="totals">
-            <td>Total Cornholes</td>
+            <td colspan="1">Cornholes</td>
             <td id="totalCornholes1P1">0</td>
             <td id="totalCornholes1P2">0</td>
             <td id="totalCornholes2P1">0</td>
@@ -244,19 +262,15 @@
             <td id="totalTeam1CH">0</td>
             <td id="totalTeam2CH">0</td>
           </tr>
-          <tr class="totals">
-            <td>Total 4-Baggers</td>
-            <td colspan="4"></td>
-            <td id="totalTeam14B">0</td>
-            <td id="totalTeam24B">0</td>
-          </tr>
         `;
       } else {
-        // Just team totals: 2 columns
-        headerRow.innerHTML = `
-          <th>Round</th>
-          <th>${names[0]}</th>
-          <th>${names[1]}</th>
+        // Teams without individual tracking, simple two columns for teams + totals
+        thead.innerHTML = `
+          <tr>
+            <th>Round</th>
+            <th>${names[0]}</th>
+            <th>${names[1]}</th>
+          </tr>
         `;
         totalsFooter.innerHTML = `
           <tr class="totals">
@@ -269,166 +283,163 @@
             <td id="totalCornholes1">0</td>
             <td id="totalCornholes2">0</td>
           </tr>
-          <tr class="totals">
-            <td>Total 4-Baggers</td>
-            <td id="total4baggers1">0</td>
-            <td id="total4baggers2">0</td>
-          </tr>
         `;
       }
     }
   }
 
   function addRound() {
-    const table = document.getElementById("scoreTable");
     roundCount++;
-    const row = document.createElement("tr");
+    const tbody = document.getElementById("scoreTable");
 
-    if (mode === "teams") {
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-round", roundCount);
+
+    if (mode === "solos") {
+      tr.innerHTML = `
+        <td>${roundCount}</td>
+        <td>
+          <div class="flex-row">
+            <label>Points:</label>
+            <button onclick="changeValue(this, -1)">-</button>
+            <input type="number" value="0" min="0" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div class="flex-row" style="margin-top:6px;">
+            <label>Cornholes:</label>
+            <button onclick="changeValue(this, -1)">-</button>
+            <input type="number" value="0" min="0" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div style="text-align:center; margin-top:6px;">
+            <label class="star-checkbox" onclick="toggleStar(this)">⭐</label>
+            <input type="checkbox" style="display:none" />
+          </div>
+        </td>
+        <td>
+          <div class="flex-row">
+            <label>Points:</label>
+            <button onclick="changeValue(this, -1)">-</button>
+            <input type="number" value="0" min="0" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div class="flex-row" style="margin-top:6px;">
+            <label>Cornholes:</label>
+            <button onclick="changeValue(this, -1)">-</button>
+            <input type="number" value="0" min="0" />
+            <button onclick="changeValue(this, 1)">+</button>
+          </div>
+          <div style="text-align:center; margin-top:6px;">
+            <label class="star-checkbox" onclick="toggleStar(this)">⭐</label>
+            <input type="checkbox" style="display:none" />
+          </div>
+        </td>
+      `;
+    } else if (mode === "teams") {
       if (trackIndividual) {
-        row.innerHTML = `
-          <td>Round ${roundCount}</td>
-          <td>
+        tr.innerHTML = `
+          <td>${roundCount}</td>
+          <td class="team-separator">
             <div class="flex-row">
-              <label>Pts:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+              <label>Points:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
+            <div class="flex-row" style="margin-top:6px;">
+              <label>Cornholes:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
+              <button onclick="changeValue(this, 1)">+</button>
+            </div>
+          </td>
+          <td class="team-separator">
             <div class="flex-row">
-              <label>CH:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+              <label>Points:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
+              <button onclick="changeValue(this, 1)">+</button>
+            </div>
+            <div class="flex-row" style="margin-top:6px;">
+              <label>Cornholes:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
           </td>
           <td>
             <div class="flex-row">
-              <label>Pts:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+              <label>Points:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
-            <div class="flex-row">
-              <label>CH:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-          </td>
-          <td>
-            <div class="flex-row">
-              <label>Pts:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
-              <button onclick="changeValue(this, 1)">+</button>
-            </div>
-            <div class="flex-row">
-              <label>CH:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <div class="flex-row" style="margin-top:6px;">
+              <label>Cornholes:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
           </td>
           <td>
             <div class="flex-row">
-              <label>Pts:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+              <label>Points:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
-            <div class="flex-row">
-              <label>CH:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <div class="flex-row" style="margin-top:6px;">
+              <label>Cornholes:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
           </td>
-          <td><span class="team1TotalPts">0</span></td>
-          <td><span class="team2TotalPts">0</span></td>
+          <td style="text-align:center; vertical-align: middle;"></td>
+          <td style="text-align:center; vertical-align: middle;"></td>
         `;
       } else {
-        row.innerHTML = `
-          <td>Round ${roundCount}</td>
+        tr.innerHTML = `
+          <td>${roundCount}</td>
           <td>
             <div class="flex-row">
-              <label>Pts:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+              <label>Points:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
-            <div class="flex-row">
-              <label>CH:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <div class="flex-row" style="margin-top:6px;">
+              <label>Cornholes:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
           </td>
           <td>
             <div class="flex-row">
-              <label>Pts:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+              <label>Points:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
-            <div class="flex-row">
-              <label>CH:</label>
-              <button onclick="changeValue(this, -1)">–</button>
-              <input type="number" value="0" min="0" onchange="updateTotals()" />
+            <div class="flex-row" style="margin-top:6px;">
+              <label>Cornholes:</label>
+              <button onclick="changeValue(this, -1)">-</button>
+              <input type="number" value="0" min="0" />
               <button onclick="changeValue(this, 1)">+</button>
             </div>
           </td>
         `;
       }
-    } else {
-      // solos mode with 4-bagger checkbox
-      row.innerHTML = `
-        <td>Round ${roundCount}</td>
-        <td>
-          <div class="flex-row">
-            <label>Pts:</label>
-            <button onclick="changeValue(this, -1)">–</button>
-            <input type="number" value="0" min="0" onchange="updateTotals()" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div class="flex-row">
-            <label>CH:</label>
-            <button onclick="changeValue(this, -1)">–</button>
-            <input type="number" value="0" min="0" onchange="updateTotals()" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div class="field-group">
-            4-Bagger: <input type="checkbox" onchange="updateTotals()" />
-          </div>
-        </td>
-        <td>
-          <div class="flex-row">
-            <label>Pts:</label>
-            <button onclick="changeValue(this, -1)">–</button>
-            <input type="number" value="0" min="0" onchange="updateTotals()" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div class="flex-row">
-            <label>CH:</label>
-            <button onclick="changeValue(this, -1)">–</button>
-            <input type="number" value="0" min="0" onchange="updateTotals()" />
-            <button onclick="changeValue(this, 1)">+</button>
-          </div>
-          <div class="field-group">
-            4-Bagger: <input type="checkbox" onchange="updateTotals()" />
-          </div>
-        </td>
-      `;
     }
 
-    table.appendChild(row);
-    lockPreviousRounds(); // lock all but last round
+    tbody.appendChild(tr);
     updateTotals();
+    lockPreviousRounds();
   }
 
   function lockPreviousRounds() {
     const rows = document.querySelectorAll("#scoreTable tr");
-
     // Unlock all first
     rows.forEach(row => {
       Array.from(row.querySelectorAll("input, button")).forEach(el => {
@@ -436,7 +447,6 @@
         el.classList.remove("locked");
       });
     });
-
     // Lock all but last
     for (let i = 0; i < rows.length - 1; i++) {
       const inputs = rows[i].querySelectorAll("input, button");
@@ -450,7 +460,6 @@
   function toggleUnlock() {
     const rows = document.querySelectorAll("#scoreTable tr");
     const unlockBtn = document.getElementById("unlockToggle");
-
     // Check if first round inputs are disabled to decide current state
     const currentlyLocked = rows.length > 1 && rows[0].querySelector("input, button").disabled;
 
@@ -479,6 +488,14 @@
     updateTotals();
   }
 
+  // Toggle star checkbox for 4-bagger in solos
+  function toggleStar(label) {
+    const cb = label.nextElementSibling;
+    cb.checked = !cb.checked;
+    label.style.color = cb.checked ? "gold" : "black";
+    updateTotals();
+  }
+
   function updateTotals() {
     const rows = document.querySelectorAll("#scoreTable tr");
 
@@ -493,17 +510,17 @@
 
         // Player 1
         const inputs1 = tds[1].querySelectorAll("input[type='number']");
-        const chkbox1 = tds[1].querySelector("input[type='checkbox']");
+        const cb1 = tds[1].querySelector("input[type='checkbox']");
         const pts1 = inputs1[0] ? parseInt(inputs1[0].value) || 0 : 0;
         const ch1 = inputs1[1] ? parseInt(inputs1[1].value) || 0 : 0;
-        const b4_1 = chkbox1 && chkbox1.checked ? 1 : 0;
+        const b4_1 = cb1 && cb1.checked ? 1 : 0;
 
         // Player 2
         const inputs2 = tds[2].querySelectorAll("input[type='number']");
-        const chkbox2 = tds[2].querySelector("input[type='checkbox']");
+        const cb2 = tds[2].querySelector("input[type='checkbox']");
         const pts2 = inputs2[0] ? parseInt(inputs2[0].value) || 0 : 0;
         const ch2 = inputs2[1] ? parseInt(inputs2[1].value) || 0 : 0;
-        const b4_2 = chkbox2 && chkbox2.checked ? 1 : 0;
+        const b4_2 = cb2 && cb2.checked ? 1 : 0;
 
         totalPts1 += pts1;
         totalCH1 += ch1;
@@ -531,7 +548,6 @@
 
         let t1TeamPts=0, t2TeamPts=0;
         let t1TeamCH=0, t2TeamCH=0;
-        let t1Team4B=0, t2Team4B=0;
 
         rows.forEach(row => {
           const tds = row.querySelectorAll("td");
@@ -583,7 +599,6 @@
           t2TeamPts += t2TotalPts;
           t1TeamCH += t1TotalCH;
           t2TeamCH += t2TotalCH;
-          // 4-baggers don't apply individually for teams with players separate here
         });
 
         // Update footer totals for players
@@ -605,27 +620,22 @@
         document.getElementById("totalTeam1CH").textContent = t1TeamCH;
         document.getElementById("totalTeam2CH").textContent = t2TeamCH;
 
-        // 4-baggers totals for teams when players separated don't exist - set 0
-        document.getElementById("totalTeam14B").textContent = 0;
-        document.getElementById("totalTeam24B").textContent = 0;
-
       } else {
-        // Teams without individual players
+        // Teams no individual tracking
         let totalPts1 = 0, totalPts2 = 0;
         let totalCH1 = 0, totalCH2 = 0;
-        let total4B1 = 0, total4B2 = 0;
+        const rows = document.querySelectorAll("#scoreTable tr");
 
         rows.forEach(row => {
           const tds = row.querySelectorAll("td");
           if (tds.length < 3) return;
 
-          // Team 1
           const inputs1 = tds[1].querySelectorAll("input[type='number']");
+          const inputs2 = tds[2].querySelectorAll("input[type='number']");
+
           const pts1 = inputs1[0] ? parseInt(inputs1[0].value) || 0 : 0;
           const ch1 = inputs1[1] ? parseInt(inputs1[1].value) || 0 : 0;
 
-          // Team 2
-          const inputs2 = tds[2].querySelectorAll("input[type='number']");
           const pts2 = inputs2[0] ? parseInt(inputs2[0].value) || 0 : 0;
           const ch2 = inputs2[1] ? parseInt(inputs2[1].value) || 0 : 0;
 
@@ -638,13 +648,8 @@
 
         document.getElementById("totalCol1").textContent = totalPts1;
         document.getElementById("totalCol2").textContent = totalPts2;
-
         document.getElementById("totalCornholes1").textContent = totalCH1;
         document.getElementById("totalCornholes2").textContent = totalCH2;
-
-        // No 4-bagger checkbox in team mode without individual tracking, so 0:
-        document.getElementById("total4baggers1").textContent = 0;
-        document.getElementById("total4baggers2").textContent = 0;
       }
     }
   }
@@ -657,25 +662,15 @@
 
   function editNames() {
     if (mode === "solos") {
-      const newP1 = prompt("Enter new name for Player 1:", document.getElementById("headerRow").children[1].textContent);
-      const newP2 = prompt("Enter new name for Player 2:", document.getElementById("headerRow").children[2].textContent);
-      if (newP1) document.getElementById("headerRow").children[1].textContent = newP1;
-      if (newP2) document.getElementById("headerRow").children[2].textContent = newP2;
-    } else {
-      if (trackIndividual) {
-        for (let i=1; i<=4; i++) {
-          const newName = prompt(`Enter new name for ${document.getElementById("headerRow").children[i].textContent}:`, document.getElementById("headerRow").children[i].textContent);
-          if (newName) document.getElementById("headerRow").children[i].textContent = newName;
-        }
-      } else {
-        const newT1 = prompt("Enter new name for Team 1:", document.getElementById("headerRow").children[1].textContent);
-        const newT2 = prompt("Enter new name for Team 2:", document.getElementById("headerRow").children[2].textContent);
-        if (newT1) document.getElementById("headerRow").children[1].textContent = newT1;
-        if (newT2) document.getElementById("headerRow").children[2].textContent = newT2;
-      }
+      document.getElementById("scoreboard").classList.add("hidden");
+      document.getElementById("soloNameForm").classList.remove("hidden");
+      resetGame();
+    } else if (mode === "teams") {
+      document.getElementById("scoreboard").classList.add("hidden");
+      document.getElementById("teamNameForm").classList.remove("hidden");
+      resetGame();
     }
   }
 </script>
-
 </body>
 </html>
