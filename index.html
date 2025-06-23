@@ -204,7 +204,6 @@ function renderSoloGame() {
   const unlockedIndex = rounds.length - 1;
   let html = `
     <h2>${players[0]} vs ${players[1]}</h2>
-    <button onclick="addSoloRound()">➕ Add Round</button>
     <button onclick="resetSoloGame()">🔄 Reset</button>
     <button onclick="editSoloNames()">✏️ Edit Names</button>
     <button onclick="toggleSoloLockRounds()">
@@ -239,8 +238,18 @@ function renderSoloGame() {
     </tr>`;
   });
 
+  
   html += `</tbody>
-    <tfoot>
+    <tfoot>`;
+  if (rounds.length >= 5) {
+    html += `
+      <tr>
+        <td></td>
+        <td><strong>${players[0]}</strong></td>
+        <td><strong>${players[1]}</strong></td>
+      </tr>`;
+  }
+  html += `
       <tr>
         <td>Total</td>
         ${[0, 1].map(p => {
@@ -250,9 +259,10 @@ function renderSoloGame() {
           return `<td>${pts} PNTS<br>${corn} CH<br>${baggers} ⭐</td>`;
         }).join('')}
       </tr>
-    
-</tfoot>
-  </table>`;
+    </tfoot>
+  </table>
+<br>
+<button onclick="addSoloRound()">➕ Add Round</button>`;
   document.getElementById('soloGame').innerHTML = html;
 }
 // ================= TEAM GAME =================
@@ -337,7 +347,6 @@ function renderTeamGame() {
   const unlockedIndex = rounds.length - 1;
   let html = `
     <h2>${players[0]} & ${players[1]} vs ${players[2]} & ${players[3]}</h2>
-    <button onclick="addTeamRound()">➕ Add Round</button>
     <button onclick="resetTeamGame()">🔄 Reset</button>
     <button onclick="editTeamNames()">✏️ Edit Names</button>
     <button onclick="toggleTeamLockRounds()">
@@ -375,8 +384,20 @@ function renderTeamGame() {
         </td>`).join('')}
     </tr>`;
   });
+  
   html += `</tbody>
-      <tfoot>
+      <tfoot>`;
+  if (rounds.length >= 5) {
+    html += `
+        <tr>
+          <td></td>
+          <td><strong>${players[0]}</strong></td>
+          <td><strong>${players[1]}</strong></td>
+          <td class="team-separator"><strong>${players[2]}</strong></td>
+          <td><strong>${players[3]}</strong></td>
+        </tr>`;
+  }
+  html += `
         <tr>
           <td>Total</td>
           ${[0, 2, 4, 6].map((p, idx) => {
@@ -386,17 +407,19 @@ function renderTeamGame() {
           }).join('')}
         </tr>
         <tr>
-  <td>Team Totals</td>
-  <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[0] + r[2], 0)} PNTS</strong></td>
-  <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[4] + r[6], 0)} PNTS</strong></td>
-</tr>
-<tr>
-  <td>Team CH Totals</td>
-  <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[1] + r[3], 0)} CH</strong></td>
-  <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[5] + r[7], 0)} CH</strong></td>
-</tr>
+          <td>Team Totals</td>
+          <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[0] + r[2], 0)} PNTS</strong></td>
+          <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[4] + r[6], 0)} PNTS</strong></td>
+        </tr>
+        <tr>
+          <td>Team CH Totals</td>
+          <td colspan="2"><strong>${rounds.reduce((s, r) => s + r[1] + r[3], 0)} CH</strong></td>
+          <td class="team-separator" colspan="2"><strong>${rounds.reduce((s, r) => s + r[5] + r[7], 0)} CH</strong></td>
+        </tr>
       </tfoot>
-    </table>`;
+    </table>
+<br>
+<button onclick="addTeamRound()">➕ Add Round</button>`;
   document.getElementById('teamGame').innerHTML = html;
 }
 function clearHistory() {
